@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<umbPackage>
+  <files>
+    <file>
+      <guid>Routing.dll</guid>
+      <orgPath>/bin</orgPath>
+      <orgName>Routing.dll</orgName>
+    </file>
+    <file>
+      <guid>package.manifest</guid>
+      <orgPath>/App_Plugins/Routing</orgPath>
+      <orgName>package.manifest</orgName>
+    </file>
+    <file>
+      <guid>Setup.ascx</guid>
+      <orgPath>/App_Plugins/Routing/Installer</orgPath>
+      <orgName>Setup.ascx</orgName>
+    </file>
+  </files>
+  <info>
+    <package>
+      <name>Routing</name>
+      <version>0.1.0</version>
+      <license url="http://opensource.org/licenses/MIT">MIT License</license>
+      <url>Routing</url>
+      <requirements>
+        <major>7</major>
+        <minor>1</minor>
+        <patch>0</patch>
+      </requirements>
+    </package>
+    <author>
+      <name>Alain</name>
+      <website>https://github.com/Alain-es/Routing</website>
+    </author>
+    <readme><![CDATA[Routing requires Umbraco v7.1.0 or above]]></readme>
+  </info>
+  <DocumentTypes />
+  <Templates />
+  <Stylesheets />
+  <Macros />
+  <DictionaryItems />
+  <Languages />
+  <DataTypes>
+  </DataTypes>  
+  <Actions>
+    <Action runat="install" alias="addDashboardSection" dashboardAlias="Routing">
+      <section>
+        <areas>
+          <area>developer</area>
+        </areas>
+        <tab caption="Routing">
+          <control>/App_Plugins/Routing/Dashboard/dashboard.html</control>
+        </tab>
+      </section>
+    </Action>
+  </Actions>
+  <control>/App_Plugins/Routing/Installer/Setup.ascx</control>
+</umbPackage>

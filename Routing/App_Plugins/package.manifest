@@ -1,0 +1,10 @@
+﻿{   
+    javascript: [
+		'~/App_Plugins/Routing/routing.resource.js',
+		'~/App_Plugins/Routing/Dashboard/routing.dashboard.controller.js'
+    ],
+    css: [
+		'~/App_Plugins/Routing/routing.css'
+    ]
+}
+ 
