@@ -1,0 +1,36 @@
+.dtgTable tr td.actions span {
+    padding: 2px 4px;
+}
+
+    .dtgTable tr td.actions span.sortHandle {
+        cursor: move;
+    }
+
+.dtgTable .umb-sortable-thumbnails li {
+    width: 80px !important;
+    height: 66px !important;
+}
+
+.dtgTable .list-icons li {
+    padding-left: 25px;
+}
+
+    .dtgTable .list-icons li > i.icon {
+        display: none;
+    }
+
+.dtgTable input {
+    max-width: 150px;
+}
+
+.dtgTable select {
+    max-width: 150px;
+}
+
+.umb-bottom-bar {
+    z-index: 1040;
+}
+
+.btn-add {
+    float: right;
+}
