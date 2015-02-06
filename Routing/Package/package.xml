@@ -50,7 +50,7 @@
           <area>developer</area>
         </areas>
         <tab caption="Routing">
-          <control>/App_Plugins/Routing/Dashboard/dashboard.html</control>
+          <control>/App_Plugins/Routing/Dashboard/routing.dashboard.html</control>
         </tab>
       </section>
     </Action>

@@ -6,20 +6,35 @@ using System.Web.Mvc;
 using System.Web.Routing;
 
 using Umbraco.Core;
+using Umbraco.Core.Services;
+using Umbraco.Core.Persistence;
+using Umbraco.Web.Mvc;
+using Umbraco.Web.Routing;
 
 using Routing.EmbeddedAssembly;
+using Routing.ContentFinders;
 
 namespace Routing.Events
 {
-    public class UmbracoStartupEvent : ApplicationEventHandler
+    public class UmbracoStartupEvent : IApplicationEventHandler
     {
-        protected override void ApplicationStarted(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
+
+        public void OnApplicationInitialized(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
         {
-            base.ApplicationStarted(umbracoApplication, applicationContext);
+        }
 
-            //LogHelper.Info(typeof(UmbracoStartupEvent), string.Format("Startup event ..."));
+        public void OnApplicationStarting(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
+        {
+            // Load routes and create config file if it doesn't exist
+            Helpers.ConfigFileHelper.LoadAndCacheConfig();
 
-            // Register routes for embedded files
+            // Insert our own ContentFinder (before the ContentFinderByNiceUrl)
+            ContentFinderResolver.Current.InsertTypeBefore<ContentFinderByNiceUrl, CustomContentFinder>();
+        }
+
+        public void OnApplicationStarted(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
+        {
+            // Register routes for package's embedded files
             RouteConfig.RegisterRoutes(RouteTable.Routes);
         }
     }

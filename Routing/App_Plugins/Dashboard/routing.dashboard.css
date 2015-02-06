@@ -1,4 +1,4 @@
-.dtgTable tr td.actions span {
+﻿.dtgTable tr td.actions span {
     padding: 2px 4px;
 }
 
@@ -19,12 +19,13 @@
         display: none;
     }
 
-.dtgTable input {
-    max-width: 150px;
+.dtgTable input, .dtgTable textarea {
+    width: 90%;
+    /*max-width: 140px;*/
 }
 
 .dtgTable select {
-    max-width: 150px;
+    max-width: 100px;
 }
 
 .umb-bottom-bar {

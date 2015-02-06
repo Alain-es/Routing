@@ -2,9 +2,21 @@
 (function () {
 
     //Main controller
-    function RoutingDashboardController($rootScope, $scope, assetsService, RoutingResource, notificationsService) {
+    function RoutingDashboardController($rootScope, $scope, $timeout, assetsService, RoutingResource, notificationsService) {
 
-        $scope.columns = { "columns": [{ "title": "Url Segments", "alias": "UrlSegments", "type": "textbox", "props": {} }, { "title": "Enabled", "alias": "Enabled", "type": "checkbox", "props": {} }] };
+        $scope.columns = {
+            "columns": [
+                { "title": "Url Segments", "alias": "UrlSegments", "type": "textbox", "props": {} },
+                { "title": "Enabled", "alias": "Enabled", "type": "checkbox", "props": {} },
+                { "title": "DocumentType Alias", "alias": "DocumentTypeAlias", "type": "textbox", "props": {} },
+                { "title": "Property Alias", "alias": "PropertyAlias", "type": "textbox", "props": {} },
+                { "title": "Template", "alias": "Template", "type": "textbox", "props": {} },
+                { "title": "Force Template", "alias": "ForceTemplate", "type": "checkbox", "props": {} },
+                { "title": "Fallback NodeId", "alias": "FallbackNodeId", "type": "textbox", "props": {} },
+                { "title": "Description", "alias": "Description", "type": "textarea", "props": {} }
+            ]
+        };
+
         $scope.value = [];
         $scope.actionInProgress = false;
         var propertiesEditorswatchers = [];
@@ -18,7 +30,18 @@
                 propertiesEditorswatchers[index]();
             }
             angular.forEach($scope.columns.columns, function (value, key) {
+                // Default values
+                switch (value.alias) {
+                    case "Enabled":
+                        rowObject[value.alias] = "true";
+                        break;
+                    case "ForceTemplate":
+                        rowObject[value.alias] = "false";
+                        break;
+                    default:
                 rowObject[value.alias] = "";
+                        break;
+                }
                 $scope.propertiesOrder.push(value.alias);
                 var columnKey = key;
                 var editorProperyAlias = value.alias;
@@ -29,13 +52,19 @@
         resetProertiesEditors();
 
         // Load the css file with the grid's styles
-        assetsService.loadCss("/App_Plugins/Routing/Routing.css");
+        assetsService.loadCss("/App_Plugins/Routing/Dashboard/routing.dashboard.css");
 
         // Load routes
         RoutingResource.getRoutes().then(
             function (response) {
                 if (response.data) {
-                    $scope.value = JSON.parse(JSON.parse(response.data)).Routes.Route;
+                    var Routes = JSON.parse(JSON.parse(response.data)).Routes;
+                    if (Routes) {
+                        if (Routes.Route) {
+                            Routes.Route = jQuery.makeArray(Routes.Route);
+                        }
+                        $scope.value = Routes.Route;
+                    }
                     // Check for deleted columns
                     angular.forEach($scope.value, function (row, key) {
                         angular.forEach(row, function (value, alias) {
@@ -73,7 +102,7 @@
             $scope.value.splice(index, 1);
         }
 
-        // Sortable grid
+        // Sort grid
         $scope.sortableOptions = {
             axis: 'y',
             cursor: "move",
@@ -86,6 +115,13 @@
                 });
             },
             update: function (ev, ui) {
+                $timeout(function () {
+                    $scope.rtEditors = [];
+                    angular.forEach($scope.columns.columns, function (value, key) {
+                        var columnKey = key;
+                        var editorProperyAlias = value.alias;
+                    });
+                }, 0);
             }
         };
 
@@ -117,6 +153,6 @@
     };
 
     // Register the controller
-    angular.module("umbraco").controller('Routing.Dashboard.RoutingDashboardController', RoutingDashboardController);
+    angular.module("umbraco").controller('Routing.DashboardController', RoutingDashboardController);
 
 })();

@@ -8,11 +8,14 @@ using System.Linq;
 using System.Web;
 using System.Web.Caching;
 
-using Umbraco.Core.Logging;
 using Umbraco.Web;
 using Umbraco.Web.Models;
+using Umbraco.Core;
+using Umbraco.Core.Models.Membership;
+using Umbraco.Core.Logging;
 
 using Routing.Models;
+using Routing.Extensions;
 
 namespace Routing.Helpers
 {
@@ -20,10 +23,6 @@ namespace Routing.Helpers
     {
         private const string _CacheIdRoutes = "Routing.CacheId.CachedRoutes";
         private const string _ConfigFile = "~/Config/Routing.config";
-        private const string _ConfigDefaultValue = @"
-            <Routes>
-            </Routes>
-            ";
 
         public static IEnumerable<Route> getRoutes()
         {
@@ -46,27 +45,58 @@ namespace Routing.Helpers
 
             try
             {
+                // Get routes from cache
+                if (HttpContext.Current.Cache.Get(_CacheIdRoutes) as IEnumerable<Route> == null)
+                {
+
                 // Check whether the config file exists
                 if (!File.Exists(configFilePath))
                 {
                     // Create a new config file with default values
-                    XmlDocument xmlDocument = new XmlDocument();
-                    xmlDocument.LoadXml(_ConfigDefaultValue);
-                    xmlDocument.PreserveWhitespace = false;
-                    xmlDocument.Save(configFilePath);
+                        XDocument xDocument = new XDocument(
+                            new XElement("Routes",
+                                new XComment(@"<Route UrlSegments=""/Test/"" Enabled=""true"" DocumentTypeAlias="""" PropertyAlias="""" Template="""" ForceTemplate=""false"" FallbackNodeId="""" Description=""Example"" />")
+                                )
+                            );
+                        xDocument.Save(configFilePath);
                 }
 
                 // Load config
                 XElement xelement = XElement.Load(configFilePath);
 
-                // Routes
-                if (HttpContext.Current.Cache.Get(_CacheIdRoutes) as List<Route> == null)
+                    // Check whether the "Enabled" and "ForceTemplate" attributes contain valid boolean values. 
+                    bool requireSaving = false;
+                    foreach (XElement element in xelement.Descendants())
                 {
+                        bool enabledAttribute;
+                        if (!bool.TryParse(element.Attribute("Enabled").Value, out enabledAttribute))
+                        {
+                            element.SetAttributeValue("Enabled", "false");
+                            requireSaving = true;
+                        }
+                        bool forceTemplateAttribute;
+                        if (!bool.TryParse(element.Attribute("ForceTemplate").Value, out forceTemplateAttribute))
+                        {
+                            element.SetAttributeValue("ForceTemplate", "false");
+                            requireSaving = true;
+                        }
+                    }
+                    if (requireSaving)
+                    {
+                        xelement.Save(configFilePath);
+                    }
+
                     var Routes = from route in xelement.Elements("Route")
                                  select new Route()
                                  {
                                      UrlSegments = route.Attribute("UrlSegments").Value,
-                                     Enabled = Convert.ToBoolean(route.Attribute("Enabled").Value)
+                                      Enabled = Convert.ToBoolean(route.Attribute("Enabled").Value),
+                                      DocumentTypeAlias = route.Attribute("DocumentTypeAlias").Value,
+                                      PropertyAlias = route.Attribute("PropertyAlias").Value,
+                                      Template = route.Attribute("Template").Value,
+                                      ForceTemplate = Convert.ToBoolean(route.Attribute("ForceTemplate").Value),
+                                      FallbackNodeId = route.Attribute("FallbackNodeId").Value,
+                                      Description = route.Attribute("Description").Value
                                  };
                     // Cache the result for a year but with dependency on the config file
                     HttpContext.Current.Cache.Add(_CacheIdRoutes, Routes, new CacheDependency(configFilePath), DateTime.Now.AddYears(1), Cache.NoSlidingExpiration, System.Web.Caching.CacheItemPriority.NotRemovable, null);
