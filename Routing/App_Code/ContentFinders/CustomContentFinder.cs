@@ -2,27 +2,23 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using System.Text.RegularExpressions;
-using System.Globalization;
+using System.Web.Caching;
 
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Web;
-using Umbraco.Web.Mvc;
-using Umbraco.Web.Models;
-using Umbraco.Web.Controllers;
 using Umbraco.Web.Routing;
 using Examine;
-using UmbracoExamine;
 
 using Routing.Helpers;
 using Routing.Models;
-using Routing.Controllers;
+
 
 namespace Routing.ContentFinders
 {
     public class CustomContentFinder : IContentFinder
     {
+
         public bool TryFindContent(PublishedContentRequest contentRequest)
         {
             // TODO: cache the results to improve the performance
@@ -99,6 +95,9 @@ namespace Routing.ContentFinders
                     {
                         contentRequest.SetTemplate(new Template(template, template, Guid.NewGuid().ToString().Replace("-", string.Empty)));
                     }
+                    // Cache the template in order to retrieve it from the Render MVC controller
+                    string cacheId = string.Format(Routing.Constants.Cache.TemplateCacheIdPattern, contentRequest.PublishedContent.Id);
+                    HttpContext.Current.Cache.Add(cacheId, template, new CacheDependency(Routing.Constants.Config.ConfigFilePhysicalPath), DateTime.Now.AddMinutes(5), Cache.NoSlidingExpiration, System.Web.Caching.CacheItemPriority.NotRemovable, null);
                 }
             }
 

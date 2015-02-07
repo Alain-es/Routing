@@ -1,26 +1,12 @@
 ﻿using System;
-using System.Web;
-using System.Web.Mvc;
 using System.Linq;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Dynamic;
-using System.ComponentModel;
-using System.Text;
-using System.IO;
-
-using System.Xml;
 using System.Xml.Linq;
-using System.Xml.Serialization;
 using System.Xml.XPath;
-
 using System.Web.Http;
 using System.Net.Http;
-using System.Web.Hosting;
 
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Schema;
 
 using Umbraco.Web.Editors;
 using Umbraco.Web.Mvc;
@@ -28,6 +14,7 @@ using Umbraco.Web.WebApi;
 using Umbraco.Core.Logging;
 
 using Routing.Helpers;
+
 
 namespace Routing.Controllers
 {

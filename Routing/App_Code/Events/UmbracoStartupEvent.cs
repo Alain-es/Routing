@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using System.Web.Mvc;
-using System.Web.Routing;
+﻿using System.Web.Routing;
 
 using Umbraco.Core;
-using Umbraco.Core.Services;
-using Umbraco.Core.Persistence;
 using Umbraco.Web.Mvc;
 using Umbraco.Web.Routing;
 
 using Routing.EmbeddedAssembly;
 using Routing.ContentFinders;
+
 
 namespace Routing.Events
 {
@@ -27,6 +21,9 @@ namespace Routing.Events
         {
             // Load routes and create config file if it doesn't exist
             Helpers.ConfigFileHelper.LoadAndCacheConfig();
+
+            // Set default controller for all routes
+            DefaultRenderMvcControllerResolver.Current.SetDefaultControllerType(typeof(Routing.Controllers.RoutingController));
 
             // Insert our own ContentFinder (before the ContentFinderByNiceUrl)
             ContentFinderResolver.Current.InsertTypeBefore<ContentFinderByNiceUrl, CustomContentFinder>();

@@ -227,6 +227,7 @@
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="App_Code\Constants.cs" />
     <Compile Include="App_Code\ContentFinders\CustomContentFinder.cs" />
     <Compile Include="App_Code\EmbeddedAssembly\EmbeddedResourceController.cs" />
     <Compile Include="App_Code\EmbeddedAssembly\RouteConfig.cs" />
@@ -234,6 +235,7 @@
     <Compile Include="App_Code\Extensions\IListExtensions.cs" />
     <Compile Include="App_Code\Helpers\ConfigFileHelper.cs" />
     <Compile Include="Controllers\RoutingApiController.cs" />
+    <Compile Include="Controllers\RoutingController.cs" />
     <Compile Include="Models\Route.cs" />
     <Compile Include="App_Code\Installer\Setup.ascx.cs">
       <DependentUpon>Setup.ascx</DependentUpon>
