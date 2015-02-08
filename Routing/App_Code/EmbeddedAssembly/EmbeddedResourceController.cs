@@ -40,7 +40,7 @@ namespace Routing.EmbeddedAssembly
 
                 // If resource can be found
                 string resourceName = string.Format("{0}.{1}{2}{3}", assembly.GetName().Name, "App_Plugins", url.Replace("/", "."), resource);
-                //LogHelper.Info(typeof(EmbeddedResourceController), string.Format("Getting the resource: {0}", resourceName));
+                LogHelper.Debug(typeof(EmbeddedResourceController), string.Format("Getting the resource ... {0}Url: {1}{2}Resource:{3}{4}Resourcename:{5}", Environment.NewLine, url, Environment.NewLine, resource, Environment.NewLine, resourceName));
                 if (Assembly.GetExecutingAssembly().GetManifestResourceNames().Any(x => x.Equals(resourceName, StringComparison.InvariantCultureIgnoreCase)))
                 {
                     return new FileStreamResult(assembly.GetManifestResourceStream(resourceName), this.GetMimeType(resourceName));

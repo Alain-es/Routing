@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Caching;
+using System.Text.RegularExpressions;
 
 using Umbraco.Core;
 using Umbraco.Core.Models;
@@ -45,23 +46,52 @@ namespace Routing.ContentFinders
                 {
                     // Use Examine to find the content node
                     var criteria = ExamineManager.Instance.DefaultSearchProvider.CreateSearchCriteria("content");
-                    var filter = criteria.NodeName(requestLastSegment.Replace("-", " "));
+                    string searchValue = Regex.Replace(requestLastSegment, @"[^A-Za-z0-9]+", "*");
+                    Examine.SearchCriteria.IBooleanOperation filter;
+                    if (string.IsNullOrWhiteSpace(route.PropertyAlias) || route.PropertyAlias.InvariantEquals("name"))
+                    {
+
+                        filter = criteria.NodeName(searchValue);
+                    }
+                    else
+                    {
+                        filter = criteria.Field(route.PropertyAlias, searchValue);
+                    }
                     if (!string.IsNullOrWhiteSpace(route.DocumentTypeAlias))
                     {
                         filter = filter.And().NodeTypeAlias(route.DocumentTypeAlias);
                     }
                     var results = umbracoHelper.TypedSearch(filter.Compile()).ToArray();
-                    if (results.Any())
+                    bool found = false;
+                    foreach (var result in results)
                     {
-                        // Always take the first result
-                        contentRequest.PublishedContent = results.First();
-                        // Needs to set a fake template in case the content doesn't have one in order to avoid an exception
-                        SetTemplate(contentRequest, route.Template, route.ForceTemplate);
-                        // Indicate that a content was found 
-                        return true;
+                        if (string.IsNullOrWhiteSpace(route.PropertyAlias) || route.PropertyAlias.InvariantEquals("name"))
+                        {
+                            if (result.Name.ToUrlSegment(contentRequest.Culture).InvariantEquals(requestLastSegment))
+                            {
+                                found = true;
+                            }
+                        }
+                        else
+                        {
+                            if (result.GetPropertyValue<string>(route.PropertyAlias).ToUrlSegment(contentRequest.Culture).InvariantEquals(requestLastSegment))
+                            {
+                                found = true;
+                            }
+
+                        }
+                        if (found)
+                        {
+                            contentRequest.PublishedContent = result;
+                            // Needs to set a fake template in case the content doesn't have one in order to avoid an exception
+                            SetTemplate(contentRequest, route.Template, route.ForceTemplate);
+                            // Indicate that a content was found 
+                            return true;
+                        }
+
                     }
                 }
-
+                // Fallback node 
                 if (requestUrl.InvariantEquals(route.UrlSegments) && !string.IsNullOrWhiteSpace(route.FallbackNodeId))
                 {
                     int nodeId;
@@ -73,7 +103,6 @@ namespace Routing.ContentFinders
                         return true;
                     }
                 }
-
             }
 
             // If no content was found then return false in order to run the next contentFinder in pipeline
