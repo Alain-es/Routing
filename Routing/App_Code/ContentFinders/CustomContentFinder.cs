@@ -30,7 +30,14 @@ namespace Routing.ContentFinders
         public bool TryFindContent(PublishedContentRequest contentRequest)
         {
 
-            string requestUrl = string.Concat(contentRequest.Uri.GetAbsolutePathDecoded(), "/");
+            // Load routes from config
+            List<Route> routes = ConfigFileHelper.getRoutes().ToList<Route>();
+
+            // If there are no routes in the config then exit
+            if (!routes.Any())
+                return false;
+
+            string requestUrl = VirtualPathUtility.AppendTrailingSlash(contentRequest.Uri.GetAbsolutePathDecoded());
 
             // Check whether it is cached
             string cacheId = string.Format(Routing.Constants.Cache.RequestUrlCacheIdPattern, requestUrl);
@@ -40,15 +47,8 @@ namespace Routing.ContentFinders
             {
                 contentRequest.PublishedContent = UmbracoContext.Current.ContentCache.GetById(contentFound.NodeId);
                 SetTemplate(contentRequest, contentFound.Template, contentFound.ForceTemplate);
-                // Indicate that a content was found 
                 return true;
             }
-
-            // Routes from config
-            List<Route> routes = new List<Route>();
-
-            // Load routes
-            routes = ConfigFileHelper.getRoutes().ToList<Route>();
 
             // Split the request url into segements
             var requestUrlSegments = contentRequest.Uri.GetAbsolutePathDecoded().Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
@@ -60,10 +60,10 @@ namespace Routing.ContentFinders
                     continue;
 
                 // Try to find the content node using the property specified
-                if (!string.IsNullOrWhiteSpace(route.PropertyAlias))
+                if (!string.IsNullOrWhiteSpace(requestLastSegment) && !string.IsNullOrWhiteSpace(route.PropertyAlias))
                 {
                     // Create a test route to compare with the request's route in order to see if the UrlSegments match
-                    var testRoute = string.Concat(route.UrlSegments, requestLastSegment, "/");
+                    var testRoute = VirtualPathUtility.AppendTrailingSlash(string.Concat(route.UrlSegments, requestLastSegment));
                     if (requestUrl.InvariantEquals(testRoute))
                     {
                         // Use Examine to find the content node
