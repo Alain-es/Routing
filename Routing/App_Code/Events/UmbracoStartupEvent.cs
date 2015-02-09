@@ -1,6 +1,9 @@
-﻿using System.Web.Routing;
+﻿using System.Web;
+using System.Web.Routing;
 
 using Umbraco.Core;
+using Umbraco.Core.Services;
+using Umbraco.Core.Models;
 using Umbraco.Web.Mvc;
 using Umbraco.Web.Routing;
 
@@ -33,7 +36,19 @@ namespace Routing.Events
         {
             // Register routes for package's embedded files
             RouteConfig.RegisterRoutes(RouteTable.Routes);
+
+            ContentService.Saved += ContentService_Saved;
         }
+
+        /// <summary>
+        ///  This event is fired when a content is created, edited, published, moved, ...
+        /// </summary>
+        void ContentService_Saved(IContentService sender, Umbraco.Core.Events.SaveEventArgs<IContent> e)
+        {
+            // Clear the cache
+            HttpContext.Current.Cache.Remove(Routing.Constants.Cache.EverythingCacheId);
+        }
+
     }
 
 }

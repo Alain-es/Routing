@@ -9,6 +9,7 @@ namespace Routing.Constants
 
     public class Cache
     {
+        public static readonly string EverythingCacheId = "Routing.CacheId.Everything";
         public static readonly string RequestUrlCacheIdPattern = "Routing.CacheId.{0}";
         public static readonly string TemplateCacheIdPattern = "Routing.CacheId.ContentTemplate{0}";
         public static readonly string RoutesConfigCacheId = "Routing.CacheId.RoutesConfig";

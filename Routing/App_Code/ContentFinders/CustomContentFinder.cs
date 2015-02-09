@@ -151,8 +151,15 @@ namespace Routing.ContentFinders
                         contentRequest.SetTemplate(new Template(template, template, Guid.NewGuid().ToString().Replace("-", string.Empty)));
                     }
                     // Cache the template in order to retrieve it from the Render MVC controller
+                    CacheDependency fileDependency = new CacheDependency(Routing.Constants.Config.ConfigFilePhysicalPath);
+                    HttpContext.Current.Cache.Add(Routing.Constants.Cache.EverythingCacheId, 0, null, DateTime.Now.AddDays(1), Cache.NoSlidingExpiration, System.Web.Caching.CacheItemPriority.NotRemovable, null);
+                    string[] keyDependencies = { Routing.Constants.Cache.EverythingCacheId };
+                    CacheDependency keyDependency = new CacheDependency(null, keyDependencies);
+                    AggregateCacheDependency aggregateCacheDependency = new AggregateCacheDependency();
+                    aggregateCacheDependency.Add(fileDependency);
+                    aggregateCacheDependency.Add(keyDependency);
                     string cacheId = string.Format(Routing.Constants.Cache.TemplateCacheIdPattern, contentRequest.PublishedContent.Id);
-                    HttpContext.Current.Cache.Add(cacheId, template, new CacheDependency(Routing.Constants.Config.ConfigFilePhysicalPath), DateTime.Now.AddMinutes(5), Cache.NoSlidingExpiration, System.Web.Caching.CacheItemPriority.NotRemovable, null);
+                    HttpContext.Current.Cache.Add(cacheId, template, aggregateCacheDependency, DateTime.Now.AddMinutes(5), Cache.NoSlidingExpiration, System.Web.Caching.CacheItemPriority.NotRemovable, null);
                 }
             }
         }
@@ -160,7 +167,14 @@ namespace Routing.ContentFinders
         private void CacheFoundContent(string cacheId, int nodeId, string template, bool forceTemplate)
         {
             var foundContent = new ContentFoundAndCached() { NodeId = nodeId, Template = template, ForceTemplate = forceTemplate };
-            HttpContext.Current.Cache.Add(cacheId, foundContent, new CacheDependency(Routing.Constants.Config.ConfigFilePhysicalPath), DateTime.Now.AddDays(1), Cache.NoSlidingExpiration, System.Web.Caching.CacheItemPriority.High, null);
+            CacheDependency fileDependency = new CacheDependency(Routing.Constants.Config.ConfigFilePhysicalPath);
+            HttpContext.Current.Cache.Add(Routing.Constants.Cache.EverythingCacheId, 0, null, DateTime.Now.AddDays(1), Cache.NoSlidingExpiration, System.Web.Caching.CacheItemPriority.NotRemovable, null);
+            string[] keyDependencies = { Routing.Constants.Cache.EverythingCacheId };
+            CacheDependency keyDependency = new CacheDependency(null, keyDependencies);
+            AggregateCacheDependency aggregateCacheDependency = new AggregateCacheDependency();
+            aggregateCacheDependency.Add(fileDependency);
+            aggregateCacheDependency.Add(keyDependency);
+            HttpContext.Current.Cache.Add(cacheId, foundContent, aggregateCacheDependency, DateTime.Now.AddDays(1), Cache.NoSlidingExpiration, System.Web.Caching.CacheItemPriority.High, null);
         }
 
     }
