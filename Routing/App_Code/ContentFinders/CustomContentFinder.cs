@@ -4,12 +4,15 @@ using System.Linq;
 using System.Web;
 using System.Web.Caching;
 using System.Text.RegularExpressions;
+using System.Diagnostics;
 
 using Umbraco.Core;
 using Umbraco.Core.Models;
+using Umbraco.Core.Logging;
 using Umbraco.Web;
 using Umbraco.Web.Routing;
 using Examine;
+using Examine.LuceneEngine.SearchCriteria;
 
 using Routing.Helpers;
 using Routing.Models;
@@ -26,9 +29,11 @@ namespace Routing.ContentFinders
 
     public class CustomContentFinder : IContentFinder
     {
+        private const string _SearchProvider = "ExternalSearcher";
 
         public bool TryFindContent(PublishedContentRequest contentRequest)
         {
+            Stopwatch stopwatch = new Stopwatch();
 
             // Load routes from config
             List<Route> routes = ConfigFileHelper.getRoutes().ToList<Route>();
@@ -50,6 +55,12 @@ namespace Routing.ContentFinders
                 return true;
             }
 
+            try
+            {
+#if DEBUG
+                stopwatch.Start();
+#endif
+
             // Split the request url into segements
             var requestUrlSegments = contentRequest.Uri.GetAbsolutePathDecoded().Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
             var requestLastSegment = (requestUrlSegments.Length > 0) ? requestUrlSegments.Last() : string.Empty;
@@ -67,13 +78,12 @@ namespace Routing.ContentFinders
                     if (requestUrl.InvariantEquals(testRoute))
                     {
                         // Use Examine to find the content node
-                        var criteria = ExamineManager.Instance.DefaultSearchProvider.CreateSearchCriteria("content");
+                            var criteria = ExamineManager.Instance.SearchProviderCollection[_SearchProvider].CreateSearchCriteria(UmbracoExamine.IndexTypes.Content);
                         string searchValue = Regex.Replace(requestLastSegment, @"[^A-Za-z0-9]+", "*");
                         Examine.SearchCriteria.IBooleanOperation filter;
                         if (route.PropertyAlias.InvariantEquals("name"))
                         {
-
-                            filter = criteria.NodeName(searchValue);
+                                filter = criteria.GroupedOr(new List<string>() { "nodeName", "urlName" }, searchValue.MultipleCharacterWildcard(), requestLastSegment.MultipleCharacterWildcard());
                         }
                         else
                         {
@@ -84,6 +94,7 @@ namespace Routing.ContentFinders
                             filter = filter.And().NodeTypeAlias(route.DocumentTypeAlias);
                         }
                         UmbracoHelper umbracoHelper = new UmbracoHelper(contentRequest.RoutingContext.UmbracoContext);
+                            //var searchResults = ExamineManager.Instance.SearchProviderCollection[_SearchProvider].Search(filter.Compile());
                         var results = umbracoHelper.TypedSearch(filter.Compile()).ToArray();
                         bool found = false;
                         foreach (var result in results)
@@ -131,6 +142,14 @@ namespace Routing.ContentFinders
                 }
             }
 
+            }
+            finally
+            {
+#if DEBUG
+                stopwatch.Stop();
+                LogHelper.Info<CustomContentFinder>(() => string.Format("Elapsed time: {0}", stopwatch.Elapsed.ToString()));
+#endif
+            }
             // If no content was found then return false in order to run the next contentFinder in pipeline
             return false;
         }
