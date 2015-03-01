@@ -7,14 +7,69 @@
       <orgName>Routing.dll</orgName>
     </file>
     <file>
+      <guid>Setup.ascx</guid>
+      <orgPath>/App_Plugins/Routing/Installer</orgPath>
+      <orgName>Setup.ascx</orgName>
+    </file>
+    <file>
       <guid>package.manifest</guid>
       <orgPath>/App_Plugins/Routing</orgPath>
       <orgName>package.manifest</orgName>
     </file>
     <file>
-      <guid>Setup.ascx</guid>
+      <guid>routing.resource.js</guid>
+      <orgPath>/App_Plugins/Routing</orgPath>
+      <orgName>routing.resource.js</orgName>
+    </file>
+    <file>
+      <guid>routing.dashboard.controller.js</guid>
+      <orgPath>/App_Plugins/Routing/Dashboard</orgPath>
+      <orgName>routing.dashboard.controller.js</orgName>
+    </file>
+    <file>
+      <guid>routing.dashboard.css</guid>
+      <orgPath>/App_Plugins/Routing/Dashboard</orgPath>
+      <orgName>routing.dashboard.css</orgName>
+    </file>
+    <file>
+      <guid>routing.dashboard.html</guid>
+      <orgPath>/App_Plugins/Routing/Dashboard</orgPath>
+      <orgName>routing.dashboard.html</orgName>
+    </file>
+    <file>
+      <guid>checkbox.html</guid>
+      <orgPath>/App_Plugins/Routing/Dashboard/propertiesViews</orgPath>
+      <orgName>checkbox.html</orgName>
+    </file>
+    <file>
+      <guid>dropdown.html</guid>
+      <orgPath>/App_Plugins/Routing/Dashboard/propertiesViews</orgPath>
+      <orgName>dropdown.html</orgName>
+    </file>
+    <file>
+      <guid>numeric.html</guid>
+      <orgPath>/App_Plugins/Routing/Dashboard/propertiesViews</orgPath>
+      <orgName>numeric.html</orgName>
+    </file>
+    <file>
+      <guid>readonly.html</guid>
+      <orgPath>/App_Plugins/Routing/Dashboard/propertiesViews</orgPath>
+      <orgName>readonly.html</orgName>
+    </file>
+    <file>
+      <guid>textarea.html</guid>
+      <orgPath>/App_Plugins/Routing/Dashboard/propertiesViews</orgPath>
+      <orgName>textarea.html</orgName>
+    </file>
+    <file>
+      <guid>textbox.html</guid>
+      <orgPath>/App_Plugins/Routing/Dashboard/propertiesViews</orgPath>
+      <orgName>textbox.html</orgName>
+    </file>
+    <file>
+      <guid>Logo.png</guid>
       <orgPath>/App_Plugins/Routing/Installer</orgPath>
-      <orgName>Setup.ascx</orgName>
+      <orgName>Logo.png</orgName>
     </file>
   </files>
   <info>
