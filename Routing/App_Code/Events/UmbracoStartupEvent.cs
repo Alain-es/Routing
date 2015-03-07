@@ -34,8 +34,8 @@ namespace Routing.Events
 
         public void OnApplicationStarted(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
         {
-            // Register routes for package's embedded files
-            RouteConfig.RegisterRoutes(RouteTable.Routes);
+            //// Register routes for package's embedded files
+            //RouteConfig.RegisterRoutes(RouteTable.Routes);
 
             ContentService.Saved += ContentService_Saved;
         }
@@ -45,8 +45,12 @@ namespace Routing.Events
         /// </summary>
         void ContentService_Saved(IContentService sender, Umbraco.Core.Events.SaveEventArgs<IContent> e)
         {
-            // Clear the cache
-            HttpContext.Current.Cache.Remove(Routing.Constants.Cache.EverythingCacheId);
+            // Clear the cache for the modified content
+            foreach (var entity in e.SavedEntities)
+            {
+                string NodeCacheId = string.Format(Routing.Constants.Cache.NodeCacheIdPattern, entity.Id);
+                HttpContext.Current.Cache.Remove(NodeCacheId);
+            }
         }
 
     }

@@ -39,7 +39,7 @@
                         rowObject[value.alias] = "false";
                         break;
                     default:
-                rowObject[value.alias] = "";
+                        rowObject[value.alias] = "";
                         break;
                 }
                 $scope.propertiesOrder.push(value.alias);

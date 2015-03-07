@@ -97,7 +97,7 @@
   <DictionaryItems />
   <Languages />
   <DataTypes>
-  </DataTypes>  
+  </DataTypes>
   <Actions>
     <Action runat="install" alias="addDashboardSection" dashboardAlias="Routing">
       <section>
