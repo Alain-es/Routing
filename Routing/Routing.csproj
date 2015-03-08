@@ -120,6 +120,7 @@
       <Private>True</Private>
       <HintPath>..\packages\UmbracoCms.Core.7.1.0\lib\System.Data.SqlServerCe.Entity.dll</HintPath>
     </Reference>
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Net.Http.Formatting, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <Private>True</Private>
@@ -234,6 +235,10 @@
     <Compile Include="App_Code\Events\UmbracoStartupEvent.cs" />
     <Compile Include="App_Code\Extensions\IListExtensions.cs" />
     <Compile Include="App_Code\Helpers\ConfigFileHelper.cs" />
+    <Compile Include="App_Code\PackageActions\DeleteFile.cs" />
+    <Compile Include="App_Code\PackageActions\InstallFiles.cs" />
+    <Compile Include="App_Code\PackageActions\UninstallFiles.cs" />
+    <Compile Include="App_Code\Helpers\XmlHelper.cs" />
     <Compile Include="Controllers\RoutingApiController.cs" />
     <Compile Include="Controllers\RoutingController.cs" />
     <Compile Include="Models\Route.cs" />
