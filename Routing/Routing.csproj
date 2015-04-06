@@ -235,10 +235,15 @@
     <Compile Include="App_Code\Events\UmbracoStartupEvent.cs" />
     <Compile Include="App_Code\Extensions\IListExtensions.cs" />
     <Compile Include="App_Code\Helpers\ConfigFileHelper.cs" />
+    <Compile Include="App_Code\Helpers\DashboardHelper.cs" />
+    <Compile Include="App_Code\Helpers\ExceptionHelper.cs" />
     <Compile Include="App_Code\PackageActions\DeleteFile.cs" />
+    <Compile Include="App_Code\PackageActions\InstallDashboard.cs" />
     <Compile Include="App_Code\PackageActions\InstallFiles.cs" />
+    <Compile Include="App_Code\PackageActions\UninstallDashboard.cs" />
     <Compile Include="App_Code\PackageActions\UninstallFiles.cs" />
     <Compile Include="App_Code\Helpers\XmlHelper.cs" />
+    <Compile Include="App_Code\PackageActions\UninstallSection.cs" />
     <Compile Include="Controllers\RoutingApiController.cs" />
     <Compile Include="Controllers\RoutingController.cs" />
     <Compile Include="Models\Route.cs" />

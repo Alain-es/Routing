@@ -7,11 +7,6 @@
       <orgName>Routing.dll</orgName>
     </file>
     <file>
-      <guid>Setup.ascx</guid>
-      <orgPath>/App_Plugins/Routing/Installer</orgPath>
-      <orgName>Setup.ascx</orgName>
-    </file>
-    <file>
       <guid>Install.zip</guid>
       <orgPath>/App_Plugins/Routing</orgPath>
       <orgName>Install.zip</orgName>
@@ -46,16 +41,8 @@
   <Actions>
     <Action runat="install" alias="uninstallFiles" uninstallFiles="~/App_Plugins/Routing/" />
     <Action runat="install" alias="installFiles" installFiles="~/App_Plugins/Routing/Install.zip" />
-    <Action runat="install" alias="addDashboardSection" dashboardAlias="Routing">
-      <section>
-        <areas>
-          <area>developer</area>
-        </areas>
-        <tab caption="Routing">
-          <control>/App_Plugins/Routing/Dashboard/routing.dashboard.html</control>
-        </tab>
-      </section>
-    </Action>
+    <Action runat="install" alias="uninstallSection" uninstallSection="Routing" />
+    <Action runat="install" alias="installDashboard" dashboardSection="StartupDeveloperDashboardSection" dashboardCaption="Routing" dashboardControl="/App_Plugins/Routing/Dashboard/routing.dashboard.html" />
   </Actions>
   <control>/App_Plugins/Routing/Installer/Setup.ascx</control>
 </umbPackage>
