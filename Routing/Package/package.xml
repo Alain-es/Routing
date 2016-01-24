@@ -15,7 +15,7 @@
   <info>
     <package>
       <name>Routing</name>
-      <version>0.2.1</version>
+      <version>0.3.0</version>
       <license url="http://opensource.org/licenses/MIT">MIT License</license>
       <url>Routing</url>
       <requirements>
@@ -42,7 +42,6 @@
     <Action runat="install" alias="uninstallFiles" uninstallFiles="~/App_Plugins/Routing/" />
     <Action runat="install" alias="installFiles" installFiles="~/App_Plugins/Routing/Install.zip" />
     <Action runat="install" alias="uninstallSection" uninstallSection="Routing" />
-    <Action runat="install" alias="installDashboard" dashboardSection="StartupDeveloperDashboardSection" dashboardCaption="Routing" dashboardControl="/App_Plugins/Routing/Dashboard/routing.dashboard.html" />
   </Actions>
   <control>/App_Plugins/Routing/Installer/Setup.ascx</control>
 </umbPackage>

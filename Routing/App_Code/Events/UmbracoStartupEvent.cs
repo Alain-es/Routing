@@ -1,14 +1,12 @@
-﻿using System.Web;
+﻿using Routing.ContentFinders;
+using Routing.EmbeddedAssembly;
+using System.Web;
 using System.Web.Routing;
-
 using Umbraco.Core;
-using Umbraco.Core.Services;
 using Umbraco.Core.Models;
+using Umbraco.Core.Services;
 using Umbraco.Web.Mvc;
 using Umbraco.Web.Routing;
-
-using Routing.EmbeddedAssembly;
-using Routing.ContentFinders;
 
 
 namespace Routing.Events
@@ -23,10 +21,10 @@ namespace Routing.Events
         public void OnApplicationStarting(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
         {
             // Load routes and create config file if it doesn't exist
-            Helpers.ConfigFileHelper.LoadAndCacheConfig();
+            new Controllers.ConfigController().LoadAndCacheConfig();
 
             // Set default controller for all routes
-            DefaultRenderMvcControllerResolver.Current.SetDefaultControllerType(typeof(Routing.Controllers.RoutingController));
+            DefaultRenderMvcControllerResolver.Current.SetDefaultControllerType(typeof(Routing.Controllers.RoutingRenderMvcController));
 
             // Insert our own ContentFinder (before the ContentFinderByNiceUrl)
             ContentFinderResolver.Current.InsertTypeBefore<ContentFinderByNiceUrl, CustomContentFinder>();
@@ -37,19 +35,62 @@ namespace Routing.Events
             //// Register routes for package's embedded files
             //RouteConfig.RegisterRoutes(RouteTable.Routes);
 
+            // Events
             ContentService.Saved += ContentService_Saved;
+            ContentService.Deleted += ContentService_Deleted;
+            ContentService.Trashed += ContentService_Trashed;
+            ContentService.Moved += ContentService_Moved;
+            ContentService.RolledBack += ContentService_RolledBack;
+            ContentService.Copied += ContentService_Copied;
         }
 
-        /// <summary>
-        ///  This event is fired when a content is created, edited, published, moved, ...
-        /// </summary>
-        void ContentService_Saved(IContentService sender, Umbraco.Core.Events.SaveEventArgs<IContent> e)
+        protected void ContentService_Saved(IContentService sender, Umbraco.Core.Events.SaveEventArgs<IContent> e)
         {
-            // Clear the cache for the modified content
+            // Remove any cache associated to the modified content nodes
+            var persistentCacheController = new Controllers.PersistentCacheController();
             foreach (var entity in e.SavedEntities)
             {
-                string NodeCacheId = string.Format(Routing.Constants.Cache.NodeCacheIdPattern, entity.Id);
-                HttpContext.Current.Cache.Remove(NodeCacheId);
+                Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, entity.Id));
+                persistentCacheController.Remove(entity.Id, true);
+            }
+        }
+
+        void ContentService_Copied(IContentService sender, Umbraco.Core.Events.CopyEventArgs<IContent> e)
+        {
+            // Remove any cache associated to the modified content node
+            Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, e.Copy.Id));
+            new Controllers.PersistentCacheController().Remove(e.Copy.Id, true);
+        }
+
+        void ContentService_RolledBack(IContentService sender, Umbraco.Core.Events.RollbackEventArgs<IContent> e)
+        {
+            // Remove any cache associated to the modified content nodes
+            Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, e.Entity.Id));
+            new Controllers.PersistentCacheController().Remove(e.Entity.Id, true);
+        }
+
+        void ContentService_Moved(IContentService sender, Umbraco.Core.Events.MoveEventArgs<IContent> e)
+        {
+            // Remove any cache associated to the modified content nodes
+            Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, e.Entity.Id));
+            new Controllers.PersistentCacheController().Remove(e.Entity.Id, true);
+        }
+
+        void ContentService_Trashed(IContentService sender, Umbraco.Core.Events.MoveEventArgs<IContent> e)
+        {
+            // Remove any cache associated to the modified content nodes
+            Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, e.Entity.Id));
+            new Controllers.PersistentCacheController().Remove(e.Entity.Id, true);
+        }
+
+        void ContentService_Deleted(IContentService sender, Umbraco.Core.Events.DeleteEventArgs<IContent> e)
+        {
+            // Remove any cache associated to the modified content nodes
+            var persistentCacheController = new Controllers.PersistentCacheController();
+            foreach (var entity in e.DeletedEntities)
+            {
+                Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, entity.Id));
+                persistentCacheController.Remove(entity.Id, true);
             }
         }
 

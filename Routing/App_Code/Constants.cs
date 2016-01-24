@@ -1,5 +1,4 @@
-﻿
-namespace Routing.Constants
+﻿namespace Routing.Constants
 {
     public class Config
     {
@@ -9,11 +8,18 @@ namespace Routing.Constants
 
     public class Cache
     {
-        public static readonly string EverythingCacheId = "Routing.CacheId.Everything";
-        public static readonly string RequestUrlCacheIdPattern = "Routing.CacheId.{0}";
-        public static readonly string NodeCacheIdPattern = "Routing.CacheId.Node{0}";
+        public static readonly string RequestUrlCacheIdPattern = "Routing.CacheId.RequestUrl{0}";
+        public static readonly string NodeDependencyCacheIdPattern = "Routing.CacheId.NodeDependency{0}";
+        
         public static readonly string TemplateCacheIdPattern = "Routing.CacheId.ContentTemplate{0}";
-        public static readonly string RoutesConfigCacheId = "Routing.CacheId.RoutesConfig";
+
+        public static readonly string ConfigCacheId = "Routing.CacheId.Config";
+        public static readonly string ConfigSettingsCacheId = "Routing.CacheId.ConfigSettings";
+        public static readonly string ConfigRoutesCacheId = "Routing.CacheId.ConfigRoutes";
+        public static readonly string ConfigRoutesEnabledCacheId = "Routing.CacheId.ConfigRoutesEnabled";
+        public static readonly string ConfigDetectFileChangesCacheId = "Routing.CacheId.ConfigDetectFileChanges";
+
+        public static readonly string PersistentCacheSavingTimeoutCacheId = "Routing.CacheId.PersistentCacheSavingTimeout";
     }
 
 }

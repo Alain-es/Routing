@@ -1,67 +1,86 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using System.Web.Caching;
-using System.Text.RegularExpressions;
-using System.Diagnostics;
-
-using Umbraco.Core;
-using Umbraco.Core.Models;
-using Umbraco.Core.Logging;
-using Umbraco.Web;
-using Umbraco.Web.Routing;
-using Examine;
+﻿using Examine;
 using Examine.LuceneEngine.SearchCriteria;
-
+using Routing.Controllers;
+using Routing.Extensions;
 using Routing.Helpers;
 using Routing.Models;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Web;
+using System.Web.Caching;
+using Umbraco.Core;
+using Umbraco.Core.Logging;
+using Umbraco.Core.Models;
+using Umbraco.Web;
+using Umbraco.Web.Routing;
 
 
 namespace Routing.ContentFinders
 {
-    public class ContentFoundAndCached
-    {
-        public int NodeId { get; set; }
-        public string Template { get; set; }
-        public bool ForceTemplate { get; set; }
-    }
 
     public class CustomContentFinder : IContentFinder
     {
         private static UmbracoHelper _UmbracoHelper = new UmbracoHelper(UmbracoContext.Current);
-
-        private const string _SearchProvider = "ExternalSearcher";
+        private static ConfigController _ConfigController = new ConfigController();
+        private static PersistentCacheController _PersistentCacheController = new PersistentCacheController();
 
         public bool TryFindContent(PublishedContentRequest contentRequest)
         {
+
+#if DEBUG
             Stopwatch stopwatch = new Stopwatch();
-
-            // Load routes from config
-            List<Route> routes = ConfigFileHelper.getRoutes().Where(r => r.Enabled).ToList<Route>();
-
-            // If there are no routes in the config then exit
-            if (!routes.Any())
-                return false;
-
+#endif
             string requestUrl = VirtualPathUtility.AppendTrailingSlash(contentRequest.Uri.GetAbsolutePathDecoded());
 
-            // Check whether it is cached
-            string cacheId = string.Format(Routing.Constants.Cache.RequestUrlCacheIdPattern, requestUrl);
-            var contentFound = HttpContext.Current.Cache[cacheId] as ContentFoundAndCached;
+            // Get settings
+            Settings settings = _ConfigController.getSettings();
 
-            if (contentFound != null)
+            // Check whether the result is cached
+            string cacheId = string.Format(Routing.Constants.Cache.RequestUrlCacheIdPattern, requestUrl);
+            var urlContentNodeCached = Routing.Helpers.CacheHelper.Get(cacheId) as UrlContentNode;
+            if (urlContentNodeCached == null)
             {
-                contentRequest.PublishedContent = UmbracoContext.Current.ContentCache.GetById(contentFound.NodeId);
-                SetTemplate(contentRequest, contentFound.Template, contentFound.ForceTemplate);
+                // Check whether the result is in the persistent cache
+                urlContentNodeCached = _PersistentCacheController.Get(requestUrl);
+            }
+            if (urlContentNodeCached != null)
+            {
+                contentRequest.PublishedContent = UmbracoContext.Current.ContentCache.GetById(urlContentNodeCached.NodeId);
+
+                // Check whether the published content is not null since it has happened a some times
+                if (contentRequest.PublishedContent != null)
+            {
+                    SetTemplate(contentRequest, urlContentNodeCached.Template, urlContentNodeCached.ForceTemplate, settings.CacheDurationInHours * 3600);
+                    // Indicates that a content node was found 
                 return true;
+            }
+            }
+
+#if DEBUG
+                stopwatch.Start();
+#endif
+
+            // Get enabled routes from the cache or from the config if they are not already cached
+            IEnumerable<Route> routes = null;
+            routes = Routing.Helpers.CacheHelper.GetExistingOrAddToCache(Routing.Constants.Cache.ConfigRoutesEnabledCacheId, settings.CacheDurationInHours * 3600, System.Web.Caching.CacheItemPriority.NotRemovable,
+                // Anonymous method that gets the enabled routes
+                () =>
+                {
+                    return _ConfigController.getRoutes().Where(r => r.Enabled).OrderBy(x => x.Position);
+                }
+                , filenamesDependencies: new string[1] { Routing.Constants.Config.ConfigFilePhysicalPath }) as IEnumerable<Route>;
+
+            // If there are no routes then exit
+            if (!routes.Any())
+            {
+                return false;
             }
 
             try
             {
-#if DEBUG
-                stopwatch.Start();
-#endif
 
                 // Split the request url into segements
                 var requestUrlSegments = contentRequest.Uri.GetAbsolutePathDecoded().Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
@@ -69,8 +88,8 @@ namespace Routing.ContentFinders
 
                 foreach (var route in routes)
                 {
-                    // Try to find the content node using the property specified
-                    if (!string.IsNullOrWhiteSpace(requestLastSegment) && !string.IsNullOrWhiteSpace(route.PropertyAlias))
+                    // Try to find the content node using the property/properties specified
+                    if (!string.IsNullOrWhiteSpace(requestLastSegment) && (!string.IsNullOrWhiteSpace(route.PropertyAlias) || !string.IsNullOrWhiteSpace(route.PropertyAliasExactMatch)))
                     {
                         // Urlsegments config file attribute admits comma separated lists of UrlSegments
                         foreach (var routeUrlSegments in route.UrlSegments.Split(','))
@@ -80,48 +99,131 @@ namespace Routing.ContentFinders
                             if (UrlMatch(testRoute, requestUrl))
                             {
                                 // Use Examine to find the content node
-                                var criteria = ExamineManager.Instance.SearchProviderCollection[_SearchProvider].CreateSearchCriteria(UmbracoExamine.IndexTypes.Content);
-                                string searchValue = Regex.Replace(requestLastSegment, @"[^A-Za-z0-9]+", "*");
+                                Examine.SearchCriteria.ISearchCriteria criteria;
                                 Examine.SearchCriteria.IBooleanOperation filter;
-                                if (route.PropertyAlias.InvariantEquals("name"))
+
+                                // Try to find a content node that contains a property (PropertyAliasExactMatch) whith value matches the last url's segment
+                                if (!string.IsNullOrWhiteSpace(route.PropertyAliasExactMatch))
                                 {
-                                    filter = criteria.GroupedOr(new List<string>() { "nodeName", "urlName" }, searchValue.MultipleCharacterWildcard(), requestLastSegment.MultipleCharacterWildcard());
+                                    IPublishedContent result = null;
+
+                                    // Search
+                                    criteria = ExamineManager.Instance.SearchProviderCollection[settings.RoutesExamineSearchProvider].CreateSearchCriteria(UmbracoExamine.IndexTypes.Content);
+                                    string searchValue = string.Format(@"""{0}""", requestLastSegment);
+                                    if (route.PropertyAliasExactMatch.InvariantEquals("name"))
+                                {
+                                        filter = criteria.GroupedOr(new List<string>() { "nodeName", "urlName" }, searchValue);
                                 }
                                 else
                                 {
-                                    filter = criteria.Field(route.PropertyAlias, searchValue);
+                                        filter = criteria.Field(route.PropertyAliasExactMatch, searchValue);
                                 }
                                 if (!string.IsNullOrWhiteSpace(route.DocumentTypeAlias))
                                 {
                                     filter = filter.And().GroupedOr(new List<string>() { "nodeTypeAlias" }, route.DocumentTypeAlias.Split(','));
                                 }
-                                //var searchResults = ExamineManager.Instance.SearchProviderCollection[_SearchProvider].Search(filter.Compile());
-                                var results = _UmbracoHelper.TypedSearch(filter.Compile()).ToArray();
-                                bool found = false;
-                                foreach (var result in results)
+                                    var results = _UmbracoHelper.TypedSearch(filter.Compile()).ToList();
+
+                                    if (results.Any())
+                                    {
+                                        // Check the full url 
+                                        if (route.MatchNodeFullUrl)
                                 {
+                                            result = results.FirstOrDefault(x => x.Url().Equals(requestUrl, route.CaseSensitive, route.AccentSensitive));
+                                        }
+                                        // Check the last segment of the url
+                                        else
+                                        {
+                                            if (route.PropertyAliasExactMatch.InvariantEquals("name"))
+                                            {
+                                                result = results.FirstOrDefault(x => x.Name.TrimStart("/").TrimEnd("/").Equals(requestLastSegment, route.CaseSensitive, route.AccentSensitive));
+                                            }
+                                            else
+                                            {
+                                                result = results.FirstOrDefault(x => x.GetPropertyValue<string>(route.PropertyAliasExactMatch).TrimStart("/").TrimEnd("/").Equals(requestLastSegment, route.CaseSensitive, route.AccentSensitive));
+                                            }
+                                        }
+
+                                        if (result != null)
+                                        {
+                                            contentRequest.PublishedContent = result;
+                                            SetTemplate(contentRequest, route.Template, route.ForceTemplate, settings.CacheDurationInHours * 3600);
+                                            AddToCacheUrlContentNode(cacheId, settings.CacheDurationInHours * 3600, requestUrl, result.Id, route.Template, route.ForceTemplate);
+                                            // Indicates that a content node was found 
+                                            return true;
+                                        }
+                                    }
+
+                                }
+
+                                // Try to find a content node that contains a property (PropertyAlias) whith value converted to url matches the last url's segment
+                                if (!string.IsNullOrWhiteSpace(route.PropertyAlias))
+                                {
+                                    IPublishedContent result = null;
+
+                                    // Search with wildcards
+                                    criteria = ExamineManager.Instance.SearchProviderCollection[settings.RoutesExamineSearchProvider].CreateSearchCriteria(UmbracoExamine.IndexTypes.Content);
+                                    string searchValue = Regex.Replace(requestLastSegment, @"[^A-Za-z0-9]+", "*");
                                     if (route.PropertyAlias.InvariantEquals("name"))
                                     {
-                                        if (result.Name.ToUrlSegment(contentRequest.Culture).InvariantEquals(requestLastSegment))
+                                        filter = criteria.GroupedOr(new List<string>() { "nodeName", "urlName" }, searchValue.MultipleCharacterWildcard());
+                                    }
+                                    else
                                         {
-                                            found = true;
+                                        filter = criteria.Field(route.PropertyAlias, searchValue.MultipleCharacterWildcard());
                                         }
+                                    if (!string.IsNullOrWhiteSpace(route.DocumentTypeAlias))
+                                    {
+                                        filter = filter.And().GroupedOr(new List<string>() { "nodeTypeAlias" }, route.DocumentTypeAlias.Split(','));
+                                    }
+                                    var results = _UmbracoHelper.TypedSearch(filter.Compile()).ToList();
+
+                                    // Search without wildcards
+                                    criteria = ExamineManager.Instance.SearchProviderCollection[settings.RoutesExamineSearchProvider].CreateSearchCriteria(UmbracoExamine.IndexTypes.Content);
+                                    searchValue = Regex.Replace(requestLastSegment, @"[^A-Za-z0-9]+", " ");
+                                    if (route.PropertyAlias.InvariantEquals("name"))
+                                    {
+                                        filter = criteria.GroupedOr(new List<string>() { "nodeName", "urlName" }, searchValue);
                                     }
                                     else
                                     {
-                                        if (result.GetPropertyValue<string>(route.PropertyAlias).ToUrlSegment(contentRequest.Culture).InvariantEquals(requestLastSegment))
+                                        filter = criteria.Field(route.PropertyAlias, searchValue);
+                                    }
+                                    if (!string.IsNullOrWhiteSpace(route.DocumentTypeAlias))
+                                    {
+                                        filter = filter.And().GroupedOr(new List<string>() { "nodeTypeAlias" }, route.DocumentTypeAlias.Split(','));
+                                    }
+                                    results.AddRange(_UmbracoHelper.TypedSearch(filter.Compile()).ToList());
+
+                                    if (results.Any())
                                         {
-                                            found = true;
+                                        // Check the full url
+                                        if (route.MatchNodeFullUrl)
+                                        {
+                                            result = results.DistinctBy(x => x.Id).FirstOrDefault(x => x.Url().Equals(requestUrl, route.CaseSensitive, route.AccentSensitive));
                                         }
 
+                                        // Check the last segment of the url
+                                        else
+                                        {
+                                            if (route.PropertyAlias.InvariantEquals("name"))
+                                            {
+                                                result = results.DistinctBy(x => x.Id).FirstOrDefault(x => x.Name.ToUrlSegment(contentRequest.Culture).Equals(requestLastSegment, route.CaseSensitive, route.AccentSensitive));
+                                            }
+                                            else
+                                            {
+                                                result = results.DistinctBy(x => x.Id).FirstOrDefault(x => x.GetPropertyValue<string>(route.PropertyAlias).ToUrlSegment(contentRequest.Culture).Equals(requestLastSegment, route.CaseSensitive, route.AccentSensitive));
                                     }
-                                    if (found)
+                                        }
+
+                                        if (result != null)
                                     {
                                         contentRequest.PublishedContent = result;
-                                        SetTemplate(contentRequest, route.Template, route.ForceTemplate);
-                                        CacheFoundContent(cacheId, result.Id, route.Template, route.ForceTemplate);
-                                        // Indicate that a content was found 
+                                            SetTemplate(contentRequest, route.Template, route.ForceTemplate, settings.CacheDurationInHours * 3600);
+                                            AddToCacheUrlContentNode(cacheId, settings.CacheDurationInHours * 3600, requestUrl, result.Id, route.Template, route.ForceTemplate);
+                                            // Indicates that a content node was found 
                                         return true;
+                                    }
                                     }
 
                                 }
@@ -129,37 +231,34 @@ namespace Routing.ContentFinders
                         }
                     }
 
-                    // Fallback node, what means no content was found or the property alias is empty
+                    // Fallback node, what means no content node was found or the property alias is empty
                     if (!string.IsNullOrWhiteSpace(route.FallbackNodeId))
                     {
                         // Urlsegments config file attribute admits comma separated lists of UrlSegments
-                        foreach (var routeUrlSegments in route.UrlSegments.Split(','))
+                        foreach (var routeUrlSegments in route.UrlSegments.Split(',').Where(x => requestUrl.InvariantEquals(x.Trim())))
                         {
-                            if (requestUrl.InvariantEquals(routeUrlSegments.Trim()))
-                            {
                                 int nodeId;
                                 if (int.TryParse(route.FallbackNodeId, out nodeId))
                                 {
                                     contentRequest.PublishedContent = UmbracoContext.Current.ContentCache.GetById(nodeId);
-                                    SetTemplate(contentRequest, route.Template, route.ForceTemplate);
-                                    CacheFoundContent(cacheId, nodeId, route.Template, route.ForceTemplate);
-                                    // Indicate that a content was found 
+                                SetTemplate(contentRequest, route.Template, route.ForceTemplate, settings.CacheDurationInHours * 3600);
+                                AddToCacheUrlContentNode(cacheId, settings.CacheDurationInHours * 3600, requestUrl, nodeId, route.Template, route.ForceTemplate);
+                                // Indicates that a content node was found 
                                     return true;
                                 }
                             }
                         }
                     }
-                }
 
             }
             finally
             {
 #if DEBUG
                 stopwatch.Stop();
-                LogHelper.Info<CustomContentFinder>(() => string.Format("Elapsed time: {0}", stopwatch.Elapsed.ToString()));
+                LogHelper.Info<CustomContentFinder>(() => string.Format("Elapsed time: {0}  {1}", stopwatch.Elapsed.ToString(), requestUrl));
 #endif
             }
-            // If no content was found then return false in order to run the next contentFinder in pipeline
+            // If no content node was found then return false in order to run the next contentFinder in pipeline
             return false;
         }
 
@@ -185,7 +284,7 @@ namespace Routing.ContentFinders
         }
 
 
-        private void SetTemplate(PublishedContentRequest contentRequest, string template, bool forceTemplate)
+        private void SetTemplate(PublishedContentRequest contentRequest, string template, bool forceTemplate, int cacheSeconds)
         {
             if (contentRequest.TemplateAlias == null || string.IsNullOrWhiteSpace(contentRequest.TemplateAlias) || forceTemplate)
             {
@@ -200,33 +299,50 @@ namespace Routing.ContentFinders
                     {
                         contentRequest.SetTemplate(new Template(template, template, Guid.NewGuid().ToString().Replace("-", string.Empty)));
                     }
-                    // Cache the template in order to retrieve it from the Render MVC controller
-                    CacheDependency fileDependency = new CacheDependency(Routing.Constants.Config.ConfigFilePhysicalPath);
-                    HttpContext.Current.Cache.Add(Routing.Constants.Cache.EverythingCacheId, 0, null, DateTime.Now.AddDays(1), Cache.NoSlidingExpiration, System.Web.Caching.CacheItemPriority.NotRemovable, null);
-                    string[] keyDependencies = { Routing.Constants.Cache.EverythingCacheId };
-                    CacheDependency keyDependency = new CacheDependency(null, keyDependencies);
-                    AggregateCacheDependency aggregateCacheDependency = new AggregateCacheDependency();
-                    aggregateCacheDependency.Add(fileDependency);
-                    aggregateCacheDependency.Add(keyDependency);
+
+                    // Create cache dependency in order to remove the cached item every time the related content node is modified (saved, deleted, trashed, ...)
+                    string nodeCacheId = string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, contentRequest.PublishedContent.Id);
+                    Routing.Helpers.CacheHelper.GetExistingOrAddToCache(nodeCacheId, cacheSeconds, System.Web.Caching.CacheItemPriority.NotRemovable,
+                        () =>
+                        {
+                            return 1;
+                        },
+                        new[] { Routing.Constants.Config.ConfigFilePhysicalPath });
+
+                    // Add the template to the cache in order to retrieve it from the Render MVC controller
                     string cacheId = string.Format(Routing.Constants.Cache.TemplateCacheIdPattern, contentRequest.PublishedContent.Id);
-                    HttpContext.Current.Cache.Add(cacheId, template, aggregateCacheDependency, DateTime.Now.AddMinutes(5), Cache.NoSlidingExpiration, System.Web.Caching.CacheItemPriority.NotRemovable, null);
+                    Routing.Helpers.CacheHelper.GetExistingOrAddToCacheSlidingExpiration(cacheId, 600, System.Web.Caching.CacheItemPriority.NotRemovable,
+                        () =>
+                        {
+                            return template;
+                        },
+                        new[] { Routing.Constants.Config.ConfigFilePhysicalPath }, new[] { nodeCacheId });
                 }
             }
         }
 
-        private void CacheFoundContent(string cacheId, int nodeId, string template, bool forceTemplate)
+        private void AddToCacheUrlContentNode(string cacheId, int cacheSeconds, string requestUrl, int nodeId, string template, bool forceTemplate)
         {
-            var foundContent = new ContentFoundAndCached() { NodeId = nodeId, Template = template, ForceTemplate = forceTemplate };
-            CacheDependency fileDependency = new CacheDependency(Routing.Constants.Config.ConfigFilePhysicalPath);
-            HttpContext.Current.Cache.Add(Routing.Constants.Cache.EverythingCacheId, 0, null, DateTime.Now.AddDays(1), Cache.NoSlidingExpiration, System.Web.Caching.CacheItemPriority.NotRemovable, null);
-            string NodeCacheId = string.Format(Routing.Constants.Cache.NodeCacheIdPattern, nodeId);
-            HttpContext.Current.Cache.Add(NodeCacheId, 0, null, DateTime.Now.AddDays(1), Cache.NoSlidingExpiration, System.Web.Caching.CacheItemPriority.NotRemovable, null);
-            string[] keyDependencies = { Routing.Constants.Cache.EverythingCacheId, NodeCacheId };
-            CacheDependency keyDependency = new CacheDependency(null, keyDependencies);
-            AggregateCacheDependency aggregateCacheDependency = new AggregateCacheDependency();
-            aggregateCacheDependency.Add(fileDependency);
-            aggregateCacheDependency.Add(keyDependency);
-            HttpContext.Current.Cache.Add(cacheId, foundContent, aggregateCacheDependency, DateTime.Now.AddDays(1), Cache.NoSlidingExpiration, System.Web.Caching.CacheItemPriority.High, null);
+            // Create cache dependency in order to remove the cached item every time the related content node is modified (saved, deleted, trashed, ...)
+            string nodeCacheId = string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, nodeId);
+            Routing.Helpers.CacheHelper.GetExistingOrAddToCache(nodeCacheId, cacheSeconds, System.Web.Caching.CacheItemPriority.NotRemovable,
+                 () =>
+                 {
+                     return 1;
+                 },
+                 new[] { Routing.Constants.Config.ConfigFilePhysicalPath });
+
+            // Add to the cache
+            var urlContentNode = new UrlContentNode() { Url = requestUrl, NodeId = nodeId, Template = template, ForceTemplate = forceTemplate };
+            Routing.Helpers.CacheHelper.GetExistingOrAddToCache(cacheId, cacheSeconds, System.Web.Caching.CacheItemPriority.High,
+                () =>
+                {
+                    return urlContentNode;
+                },
+                new[] { Routing.Constants.Config.ConfigFilePhysicalPath }, new[] { nodeCacheId });
+
+            // Add to the persistent cache
+            _PersistentCacheController.Add(urlContentNode);
         }
 
     }
