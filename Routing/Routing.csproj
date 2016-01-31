@@ -236,6 +236,7 @@
     <Compile Include="App_Code\Extensions\StringExtensions.cs" />
     <Compile Include="App_Code\Helpers\CacheHelper.cs" />
     <Compile Include="App_Code\Helpers\CollectionHelper.cs" />
+    <Compile Include="App_Code\Helpers\EncryptionHelper.cs" />
     <Compile Include="App_Code\Helpers\SerializationHelper.cs" />
     <Compile Include="Controllers\ConfigController.cs" />
     <Compile Include="App_Code\Helpers\DashboardHelper.cs" />
@@ -250,6 +251,7 @@
     <Compile Include="App_Code\PackageActions\UninstallSection.cs" />
     <Compile Include="Controllers\PersistentCacheController.cs" />
     <Compile Include="Controllers\RoutingRenderMvcController.cs" />
+    <Compile Include="Models\RouteSegmentSettings.cs" />
     <Compile Include="Models\UrlContentNode.cs" />
     <Compile Include="Models\Route.cs" />
     <Compile Include="App_Code\Installer\Setup.ascx.cs">

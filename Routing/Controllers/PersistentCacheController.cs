@@ -2,7 +2,6 @@
 using Routing.Models;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Core.Logging;
 
@@ -14,7 +13,7 @@ namespace Routing.Controllers
         private static ConfigController _ConfigController = new ConfigController();
         private static ConcurrentDictionary<string, UrlContentNode> _PersistentCache = null;
 
-        public void LoadPersistentCache(bool forceReload = false)
+        private void LoadPersistentCache(bool forceReload = false)
         {
             // Check whether the persistent cache file will be updated. If not so then clear the persistent cache and remove the file.
             var persistentCacheUpdateFrequencyInMinutes = _ConfigController.getSettings().PersistentCacheUpdateFrequencyInMinutes;
@@ -48,7 +47,7 @@ namespace Routing.Controllers
             }
         }
 
-        public void SavePersistentCache()
+        private void SavePersistentCache()
         {
             if (_PersistentCache == null)
             {
@@ -69,7 +68,7 @@ namespace Routing.Controllers
             }
         }
 
-        public void RemovePersistentCacheFile()
+        private void RemovePersistentCacheFile()
         {
             try
             {

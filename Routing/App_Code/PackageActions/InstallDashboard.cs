@@ -1,8 +1,5 @@
 ﻿using Routing.Helpers;
-using System.IO;
-using System.Web.Hosting;
 using System.Xml;
-using Umbraco.Core.Logging;
 using umbraco.interfaces;
 
 

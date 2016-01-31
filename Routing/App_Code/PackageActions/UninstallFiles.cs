@@ -1,11 +1,9 @@
 ﻿using Routing.Helpers;
-using System;
 using System.IO;
-using System.IO.Compression;    //Requires to add reference a to: System.IO.Compression.FileSystem
 using System.Web.Hosting;
 using System.Xml;
-using Umbraco.Core.Logging;
 using umbraco.interfaces;
+using Umbraco.Core.Logging;
 
 
 namespace Routing.PackageActions

@@ -1,10 +1,7 @@
-﻿using System.IO;
-using System.Web.Hosting;
+﻿using Routing.Helpers;
 using System.Xml;
-using Umbraco.Core.Logging;
 using umbraco.interfaces;
 
-using Routing.Helpers;
 
 namespace Routing.PackageActions
 {

@@ -1,11 +1,14 @@
-﻿namespace Routing.Models
+﻿using System.Collections.Generic;
+
+namespace Routing.Models
 {
     public class Route
     {
         public int Position { get; set; }
 
         // [Optional]
-        public string UrlSegments { get; set; }
+        // Admits comma separated lists of UrlSegments strings
+        public string RouteSegmentSettings { get; set; }
 
         // [Optional]
         // Deafault value: true
@@ -31,7 +34,7 @@
 
         // [Optional]
         public string Template { get; set; }
-        
+
         // [Optional]
         // Deafault value: false
         public bool ForceTemplate { get; set; }
@@ -50,5 +53,9 @@
 
         // [Optional]
         public string Description { get; set; }
+
+        // [Internal]
+        // All the UrlSegmentSettings splited into a collection
+        public List<RouteSegmentSettings> RouteSegmentSettingsCollection { get; set; }
     }
 }

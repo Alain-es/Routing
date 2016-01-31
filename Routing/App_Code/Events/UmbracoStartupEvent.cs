@@ -1,7 +1,4 @@
 ﻿using Routing.ContentFinders;
-using Routing.EmbeddedAssembly;
-using System.Web;
-using System.Web.Routing;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Core.Services;
@@ -36,12 +33,20 @@ namespace Routing.Events
             //RouteConfig.RegisterRoutes(RouteTable.Routes);
 
             // Events
+            ContentService.Created += ContentService_Created;
             ContentService.Saved += ContentService_Saved;
             ContentService.Deleted += ContentService_Deleted;
             ContentService.Trashed += ContentService_Trashed;
             ContentService.Moved += ContentService_Moved;
             ContentService.RolledBack += ContentService_RolledBack;
             ContentService.Copied += ContentService_Copied;
+        }
+
+        void ContentService_Created(IContentService sender, Umbraco.Core.Events.NewEventArgs<IContent> e)
+        {
+            // Remove all Ulrs cached for which no content node was found
+            Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, 0));
+            new Controllers.PersistentCacheController().Remove(0, true);
         }
 
         protected void ContentService_Saved(IContentService sender, Umbraco.Core.Events.SaveEventArgs<IContent> e)
@@ -53,6 +58,10 @@ namespace Routing.Events
                 Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, entity.Id));
                 persistentCacheController.Remove(entity.Id, true);
             }
+
+            // Remove all Ulrs cached for which no content node was found
+            Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, 0));
+            persistentCacheController.Remove(0, true);
         }
 
         void ContentService_Copied(IContentService sender, Umbraco.Core.Events.CopyEventArgs<IContent> e)
@@ -60,6 +69,10 @@ namespace Routing.Events
             // Remove any cache associated to the modified content node
             Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, e.Copy.Id));
             new Controllers.PersistentCacheController().Remove(e.Copy.Id, true);
+
+            // Remove all Ulrs cached for which no content node was found
+            Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, 0));
+            new Controllers.PersistentCacheController().Remove(0, true);
         }
 
         void ContentService_RolledBack(IContentService sender, Umbraco.Core.Events.RollbackEventArgs<IContent> e)
@@ -67,6 +80,10 @@ namespace Routing.Events
             // Remove any cache associated to the modified content nodes
             Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, e.Entity.Id));
             new Controllers.PersistentCacheController().Remove(e.Entity.Id, true);
+
+            // Remove all Ulrs cached for which no content node was found
+            Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, 0));
+            new Controllers.PersistentCacheController().Remove(0, true);
         }
 
         void ContentService_Moved(IContentService sender, Umbraco.Core.Events.MoveEventArgs<IContent> e)
@@ -74,6 +91,10 @@ namespace Routing.Events
             // Remove any cache associated to the modified content nodes
             Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, e.Entity.Id));
             new Controllers.PersistentCacheController().Remove(e.Entity.Id, true);
+
+            // Remove all Ulrs cached for which no content node was found
+            Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, 0));
+            new Controllers.PersistentCacheController().Remove(0, true);
         }
 
         void ContentService_Trashed(IContentService sender, Umbraco.Core.Events.MoveEventArgs<IContent> e)
@@ -81,6 +102,10 @@ namespace Routing.Events
             // Remove any cache associated to the modified content nodes
             Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, e.Entity.Id));
             new Controllers.PersistentCacheController().Remove(e.Entity.Id, true);
+
+            // Remove all Ulrs cached for which no content node was found
+            Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, 0));
+            new Controllers.PersistentCacheController().Remove(0, true);
         }
 
         void ContentService_Deleted(IContentService sender, Umbraco.Core.Events.DeleteEventArgs<IContent> e)
@@ -92,6 +117,10 @@ namespace Routing.Events
                 Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, entity.Id));
                 persistentCacheController.Remove(entity.Id, true);
             }
+
+            // Remove all Ulrs cached for which no content node was found
+            Routing.Helpers.CacheHelper.Remove(string.Format(Routing.Constants.Cache.NodeDependencyCacheIdPattern, 0));
+            persistentCacheController.Remove(0, true);
         }
 
     }

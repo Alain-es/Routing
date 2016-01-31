@@ -1,13 +1,9 @@
 ﻿using Routing.Models;
-using Routing.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Web;
 using System.Web.Caching;
-using System.Xml;
 using System.Xml.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Logging;
@@ -48,7 +44,7 @@ namespace Routing.Controllers
             // Setup the method that detects when the config file is modified
             DetectConfigFileChanges();
 
-            // Check whether the config file exists and it is up to date. Cache its content.
+            // Check whether the config file exists and is up to date. Cache its content.
             Routing.Helpers.CacheHelper.GetExistingOrAddToCache(Routing.Constants.Cache.ConfigCacheId, 3600 * 24 * 365, System.Web.Caching.CacheItemPriority.NotRemovable,
 
                 // Anonymous method that gets the config
@@ -71,7 +67,8 @@ namespace Routing.Controllers
                                         new XElement("RoutesAreAccentSensitive", "true"),
                                         new XElement("CacheDurationInHours", "24"),
                                         new XElement("PersistentCacheMapPath", "~/App_Data/TEMP/Routing/persistentCache.dat"),
-                                        new XElement("PersistentCacheUpdateFrequencyInMinutes", "10")
+                                        new XElement("PersistentCacheUpdateFrequencyInMinutes", "10"),
+                                        new XElement("EncryptionKey", "")
                                         ),
                                     new XElement("Routes",
                                         new XComment(@"<Route UrlSegments=""/Test/"" Enabled=""true"" DocumentTypeAlias="""" PropertyAlias="""" PropertyAliasExactMatch="""" MatchNodeFullUrl=""false"" Template="""" ForceTemplate=""false"" FallbackNodeId="""" Description=""Example"" />")
@@ -96,7 +93,8 @@ namespace Routing.Controllers
                                         new XElement("RoutesAreAccentSensitive", "true"),
                                         new XElement("CacheDurationInHours", "24"),
                                         new XElement("PersistentCacheMapPath", "~/App_Data/TEMP/Routing/persistentCache.dat"),
-                                        new XElement("PersistentCacheUpdateFrequencyInMinutes", "10")
+                                        new XElement("PersistentCacheUpdateFrequencyInMinutes", "10"),
+                                        new XElement("EncryptionKey", "")
                                         ),
                                     xelement
                                 )
@@ -236,6 +234,10 @@ namespace Routing.Controllers
                             {
                                 settings.PersistentCacheUpdateFrequencyInMinutes = persistentCacheUpdateFrequencyInMinutes;
                             }
+                            if (xelementSettings.Element("EncryptionKey") != null && !string.IsNullOrWhiteSpace(xelementSettings.Element("EncryptionKey").Value))
+                            {
+                                settings.EncryptionKey = xelementSettings.Element("EncryptionKey").Value;
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -271,7 +273,7 @@ namespace Routing.Controllers
                                   select new Route()
                                   {
                                       Position = counter++,
-                                      UrlSegments = route.Attribute("UrlSegments") != null ? route.Attribute("UrlSegments").Value : string.Empty,
+                                      RouteSegmentSettings = route.Attribute("UrlSegments") != null ? route.Attribute("UrlSegments").Value : string.Empty,
                                       Enabled = Convert.ToBoolean(route.Attribute("Enabled") != null ? route.Attribute("Enabled").Value : "true"),
                                       DocumentTypeAlias = route.Attribute("DocumentTypeAlias") != null ? route.Attribute("DocumentTypeAlias").Value : string.Empty,
                                       PropertyAlias = route.Attribute("PropertyAlias") != null ? route.Attribute("PropertyAlias").Value : string.Empty,
@@ -284,6 +286,15 @@ namespace Routing.Controllers
                                       AccentSensitive = Convert.ToBoolean(route.Attribute("AccentSensitive") != null ? route.Attribute("AccentSensitive").Value : settings.RoutesAreAccentSensitive.ToString()),
                                       Description = route.Attribute("Description") != null ? route.Attribute("Description").Value : string.Empty
                                   }).ToList();
+
+                        foreach (var route in routes)
+                        {
+                            // UrlSegmentSettings admits comma separated lists. Converts it into into a collection
+                            route.RouteSegmentSettingsCollection = route.RouteSegmentSettings
+                                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                .Select(x => new RouteSegmentSettings(x))
+                                .ToList();
+                        }
                     }
                     catch (Exception ex)
                     {

@@ -10,7 +10,7 @@
     {
         public static readonly string RequestUrlCacheIdPattern = "Routing.CacheId.RequestUrl{0}";
         public static readonly string NodeDependencyCacheIdPattern = "Routing.CacheId.NodeDependency{0}";
-        
+
         public static readonly string TemplateCacheIdPattern = "Routing.CacheId.ContentTemplate{0}";
 
         public static readonly string ConfigCacheId = "Routing.CacheId.Config";

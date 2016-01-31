@@ -12,6 +12,8 @@
         public string PersistentCacheMapPath { get; set; }
         public int PersistentCacheUpdateFrequencyInMinutes { get; set; }
 
+        public string EncryptionKey { get; set; }
+
         public Settings()
         {
             RoutesExamineSearchProvider = "ExternalSearcher";
@@ -20,6 +22,7 @@
             CacheDurationInHours = 24;
             PersistentCacheMapPath = "~/App_Data/TEMP/Routing/persistentCache.dat";
             PersistentCacheUpdateFrequencyInMinutes = 10;
+            EncryptionKey = string.Empty;
         }
     }
 }

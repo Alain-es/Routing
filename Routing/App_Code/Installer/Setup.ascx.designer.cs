@@ -7,11 +7,13 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Routing.Installer {
-    
-    
-    public partial class Setup {
-        
+namespace Routing.Installer
+{
+
+
+    public partial class Setup
+    {
+
         /// <summary>
         /// pnlFinished control.
         /// </summary>
