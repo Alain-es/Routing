@@ -21,7 +21,6 @@ namespace Routing.Helpers
                     BinaryFormatter binaryFormatter = new BinaryFormatter();
                     binaryFormatter.Serialize(memoryStream, obj);
                     byte[] data = memoryStream.ToArray();
-                    memoryStream.Close();
                     result = Convert.ToBase64String(data);
                 }
             }
@@ -48,7 +47,6 @@ namespace Routing.Helpers
                 {
                     BinaryFormatter binaryFormatter = new BinaryFormatter();
                     binaryFormatter.Serialize(fileStream, obj);
-                    fileStream.Close();
                 }
             }
             catch (Exception ex)
@@ -67,7 +65,6 @@ namespace Routing.Helpers
                 {
                     BinaryFormatter binaryFormatter = new BinaryFormatter();
                     result = binaryFormatter.Deserialize(memoryStream);
-                    memoryStream.Close();
                 }
             }
             catch (Exception ex)
@@ -84,11 +81,10 @@ namespace Routing.Helpers
             {
                 if (System.IO.File.Exists(filePath))
                 {
-                    using (FileStream fileStream = new FileStream(filePath, FileMode.Open))
+                    using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     {
                         BinaryFormatter formatter = new BinaryFormatter();
                         result = formatter.Deserialize(fileStream);
-                        fileStream.Close();
                     }
                 }
             }
