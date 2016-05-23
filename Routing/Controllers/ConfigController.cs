@@ -7,6 +7,7 @@ using System.Web.Caching;
 using System.Xml.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Logging;
+using Routing.Extensions;
 
 
 namespace Routing.Controllers
@@ -82,7 +83,7 @@ namespace Routing.Controllers
                         xelement = XElement.Load(Routing.Constants.Config.ConfigFilePhysicalPath);
 
                         // Check whether the <Routing> root node exists. If not so then update the config file's structure
-                        if (!xelement.Name.LocalName.Equals("Routing"))
+                        if (!xelement.Name.LocalName.InvariantEquals("Routing"))
                         {
                             XDocument xDocument = new XDocument(
                                 new XElement("Routing",
@@ -105,9 +106,9 @@ namespace Routing.Controllers
 
                         //Settings: Check whether the 'RoutesAreCaseSensitive', 'RoutesAreAccentSensitive', 'CacheDurationInHours' and 'PersistentCacheUpdateFrequencyInMinutes' attributes contain valid boolean/integer values. 
                         bool requireSaving = false;
-                        if (xelement.Element("Settings") != null)
+                        if (xelement.ElementCaseInsensitive("Settings") != null)
                         {
-                            foreach (XElement element in xelement.Element("Settings").Descendants())
+                            foreach (XElement element in xelement.ElementCaseInsensitive("Settings").Descendants())
                             {
                                 bool routesAreCaseSensitive;
                                 if (element.Name.LocalName.InvariantEquals("RoutesAreCaseSensitive") && !bool.TryParse(element.Value, out routesAreCaseSensitive))
@@ -137,36 +138,36 @@ namespace Routing.Controllers
                         }
 
                         //Routes: Check whether the 'Enabled', 'ForceTemplate', 'MatchNodeFullUrl', 'CaseSensitive' and 'AccentSensitive' attributes contain valid boolean values. 
-                        foreach (XElement element in xelement.Element("Routes").Descendants())
+                        foreach (XElement element in xelement.ElementCaseInsensitive("Routes").Descendants())
                         {
                             bool enabledAttribute;
-                            if (element.Attribute("Enabled") != null && !bool.TryParse(element.Attribute("Enabled").Value, out enabledAttribute))
+                            if (element.AttributeCaseInsensitive("Enabled") != null && !bool.TryParse(element.AttributeCaseInsensitive("Enabled").Value, out enabledAttribute))
                             {
-                                element.SetAttributeValue("Enabled", "true");
+                                element.SetAttributeValueCaseInsensitive("Enabled", "true");
                                 requireSaving = true;
                             }
                             bool forceTemplateAttribute;
-                            if (element.Attribute("ForceTemplate") != null && !bool.TryParse(element.Attribute("ForceTemplate").Value, out forceTemplateAttribute))
+                            if (element.AttributeCaseInsensitive("ForceTemplate") != null && !bool.TryParse(element.AttributeCaseInsensitive("ForceTemplate").Value, out forceTemplateAttribute))
                             {
-                                element.SetAttributeValue("ForceTemplate", "false");
+                                element.SetAttributeValueCaseInsensitive("ForceTemplate", "false");
                                 requireSaving = true;
                             }
                             bool matchNodeFullUrlAttribute;
-                            if (element.Attribute("MatchNodeFullUrl") != null && !bool.TryParse(element.Attribute("MatchNodeFullUrl").Value, out matchNodeFullUrlAttribute))
+                            if (element.AttributeCaseInsensitive("MatchNodeFullUrl") != null && !bool.TryParse(element.AttributeCaseInsensitive("MatchNodeFullUrl").Value, out matchNodeFullUrlAttribute))
                             {
-                                element.SetAttributeValue("MatchNodeFullUrl", "false");
+                                element.SetAttributeValueCaseInsensitive("MatchNodeFullUrl", "false");
                                 requireSaving = true;
                             }
                             bool caseSensitiveAttribute;
-                            if (element.Attribute("CaseSensitive") != null && !bool.TryParse(element.Attribute("CaseSensitive").Value, out caseSensitiveAttribute))
+                            if (element.AttributeCaseInsensitive("CaseSensitive") != null && !bool.TryParse(element.AttributeCaseInsensitive("CaseSensitive").Value, out caseSensitiveAttribute))
                             {
-                                element.SetAttributeValue("CaseSensitive", "false");
+                                element.SetAttributeValueCaseInsensitive("CaseSensitive", "false");
                                 requireSaving = true;
                             }
                             bool accentSensitiveAttribute;
-                            if (element.Attribute("AccentSensitive") != null && !bool.TryParse(element.Attribute("AccentSensitive").Value, out accentSensitiveAttribute))
+                            if (element.AttributeCaseInsensitive("AccentSensitive") != null && !bool.TryParse(element.AttributeCaseInsensitive("AccentSensitive").Value, out accentSensitiveAttribute))
                             {
-                                element.SetAttributeValue("AccentSensitive", "true");
+                                element.SetAttributeValueCaseInsensitive("AccentSensitive", "true");
                                 requireSaving = true;
                             }
                         }
@@ -203,40 +204,40 @@ namespace Routing.Controllers
                         XElement xelement = Routing.Helpers.CacheHelper.Get(Routing.Constants.Cache.ConfigCacheId) as XElement;
 
                         // Get the config settings
-                        XElement xelementSettings = xelement.Element("Settings");
+                        XElement xelementSettings = xelement.ElementCaseInsensitive("Settings");
                         if (xelementSettings != null)
                         {
-                            if (xelementSettings.Element("RoutesExamineSearchProvider") != null && !string.IsNullOrWhiteSpace(xelementSettings.Element("RoutesExamineSearchProvider").Value))
+                            if (xelementSettings.ElementCaseInsensitive("RoutesExamineSearchProvider") != null && !string.IsNullOrWhiteSpace(xelementSettings.ElementCaseInsensitive("RoutesExamineSearchProvider").Value))
                             {
-                                settings.RoutesExamineSearchProvider = xelementSettings.Element("RoutesExamineSearchProvider").Value;
+                                settings.RoutesExamineSearchProvider = xelementSettings.ElementCaseInsensitive("RoutesExamineSearchProvider").Value;
                             }
                             bool routesAreCaseSensitive;
-                            if (xelementSettings.Element("RoutesAreCaseSensitive") != null && bool.TryParse(xelementSettings.Element("RoutesAreCaseSensitive").Value, out routesAreCaseSensitive))
+                            if (xelementSettings.ElementCaseInsensitive("RoutesAreCaseSensitive") != null && bool.TryParse(xelementSettings.ElementCaseInsensitive("RoutesAreCaseSensitive").Value, out routesAreCaseSensitive))
                             {
                                 settings.RoutesAreCaseSensitive = routesAreCaseSensitive;
                             }
                             bool routesAreAccentSensitive;
-                            if (xelementSettings.Element("RoutesAreAccentSensitive") != null && bool.TryParse(xelementSettings.Element("RoutesAreAccentSensitive").Value, out routesAreAccentSensitive))
+                            if (xelementSettings.ElementCaseInsensitive("RoutesAreAccentSensitive") != null && bool.TryParse(xelementSettings.ElementCaseInsensitive("RoutesAreAccentSensitive").Value, out routesAreAccentSensitive))
                             {
                                 settings.RoutesAreAccentSensitive = routesAreAccentSensitive;
                             }
                             int cacheDurationInHours;
-                            if (xelementSettings.Element("CacheDurationInHours") != null && int.TryParse(xelementSettings.Element("CacheDurationInHours").Value, out cacheDurationInHours))
+                            if (xelementSettings.ElementCaseInsensitive("CacheDurationInHours") != null && int.TryParse(xelementSettings.ElementCaseInsensitive("CacheDurationInHours").Value, out cacheDurationInHours))
                             {
                                 settings.CacheDurationInHours = cacheDurationInHours;
                             }
-                            if (xelementSettings.Element("PersistentCacheMapPath") != null && !string.IsNullOrWhiteSpace(xelementSettings.Element("PersistentCacheMapPath").Value))
+                            if (xelementSettings.ElementCaseInsensitive("PersistentCacheMapPath") != null && !string.IsNullOrWhiteSpace(xelementSettings.ElementCaseInsensitive("PersistentCacheMapPath").Value))
                             {
-                                settings.PersistentCacheMapPath = xelementSettings.Element("PersistentCacheMapPath").Value;
+                                settings.PersistentCacheMapPath = xelementSettings.ElementCaseInsensitive("PersistentCacheMapPath").Value;
                             }
                             int persistentCacheUpdateFrequencyInMinutes;
-                            if (xelementSettings.Element("PersistentCacheUpdateFrequencyInMinutes") != null && int.TryParse(xelementSettings.Element("PersistentCacheUpdateFrequencyInMinutes").Value, out persistentCacheUpdateFrequencyInMinutes))
+                            if (xelementSettings.ElementCaseInsensitive("PersistentCacheUpdateFrequencyInMinutes") != null && int.TryParse(xelementSettings.ElementCaseInsensitive("PersistentCacheUpdateFrequencyInMinutes").Value, out persistentCacheUpdateFrequencyInMinutes))
                             {
                                 settings.PersistentCacheUpdateFrequencyInMinutes = persistentCacheUpdateFrequencyInMinutes;
                             }
-                            if (xelementSettings.Element("EncryptionKey") != null && !string.IsNullOrWhiteSpace(xelementSettings.Element("EncryptionKey").Value))
+                            if (xelementSettings.ElementCaseInsensitive("EncryptionKey") != null && !string.IsNullOrWhiteSpace(xelementSettings.ElementCaseInsensitive("EncryptionKey").Value))
                             {
-                                settings.EncryptionKey = xelementSettings.Element("EncryptionKey").Value;
+                                settings.EncryptionKey = xelementSettings.ElementCaseInsensitive("EncryptionKey").Value;
                             }
                         }
                     }
@@ -269,22 +270,22 @@ namespace Routing.Controllers
 
                         // Get routes
                         int counter = 0;
-                        routes = (from route in xelement.Element("Routes").Elements("Route")
+                        routes = (from route in xelement.ElementCaseInsensitive("Routes").Elements("Route")
                                   select new Route()
                                   {
                                       Position = counter++,
-                                      RouteSegmentSettings = route.Attribute("UrlSegments") != null ? route.Attribute("UrlSegments").Value : string.Empty,
-                                      Enabled = Convert.ToBoolean(route.Attribute("Enabled") != null ? route.Attribute("Enabled").Value : "true"),
-                                      DocumentTypeAlias = route.Attribute("DocumentTypeAlias") != null ? route.Attribute("DocumentTypeAlias").Value : string.Empty,
-                                      PropertyAlias = route.Attribute("PropertyAlias") != null ? route.Attribute("PropertyAlias").Value : string.Empty,
-                                      PropertyAliasExactMatch = route.Attribute("PropertyAliasExactMatch") != null ? route.Attribute("PropertyAliasExactMatch").Value : string.Empty,
-                                      Template = route.Attribute("Template") != null ? route.Attribute("Template").Value : string.Empty,
-                                      ForceTemplate = Convert.ToBoolean(route.Attribute("ForceTemplate") != null ? route.Attribute("ForceTemplate").Value : "false"),
-                                      MatchNodeFullUrl = Convert.ToBoolean(route.Attribute("MatchNodeFullUrl") != null ? route.Attribute("MatchNodeFullUrl").Value : "false"),
-                                      FallbackNodeId = route.Attribute("FallbackNodeId") != null ? route.Attribute("FallbackNodeId").Value : string.Empty,
-                                      CaseSensitive = Convert.ToBoolean(route.Attribute("CaseSensitive") != null ? route.Attribute("CaseSensitive").Value : settings.RoutesAreCaseSensitive.ToString()),
-                                      AccentSensitive = Convert.ToBoolean(route.Attribute("AccentSensitive") != null ? route.Attribute("AccentSensitive").Value : settings.RoutesAreAccentSensitive.ToString()),
-                                      Description = route.Attribute("Description") != null ? route.Attribute("Description").Value : string.Empty
+                                      RouteSegmentSettings = route.AttributeCaseInsensitive("UrlSegments") != null ? route.AttributeCaseInsensitive("UrlSegments").Value : string.Empty,
+                                      Enabled = Convert.ToBoolean(route.AttributeCaseInsensitive("Enabled") != null ? route.AttributeCaseInsensitive("Enabled").Value : "true"),
+                                      DocumentTypeAlias = route.AttributeCaseInsensitive("DocumentTypeAlias") != null ? route.AttributeCaseInsensitive("DocumentTypeAlias").Value : string.Empty,
+                                      PropertyAlias = route.AttributeCaseInsensitive("PropertyAlias") != null ? route.AttributeCaseInsensitive("PropertyAlias").Value : string.Empty,
+                                      PropertyAliasExactMatch = route.AttributeCaseInsensitive("PropertyAliasExactMatch") != null ? route.AttributeCaseInsensitive("PropertyAliasExactMatch").Value : string.Empty,
+                                      Template = route.AttributeCaseInsensitive("Template") != null ? route.AttributeCaseInsensitive("Template").Value : string.Empty,
+                                      ForceTemplate = Convert.ToBoolean(route.AttributeCaseInsensitive("ForceTemplate") != null ? route.AttributeCaseInsensitive("ForceTemplate").Value : "false"),
+                                      MatchNodeFullUrl = Convert.ToBoolean(route.AttributeCaseInsensitive("MatchNodeFullUrl") != null ? route.AttributeCaseInsensitive("MatchNodeFullUrl").Value : "false"),
+                                      FallbackNodeId = route.AttributeCaseInsensitive("FallbackNodeId") != null ? route.AttributeCaseInsensitive("FallbackNodeId").Value : string.Empty,
+                                      CaseSensitive = Convert.ToBoolean(route.AttributeCaseInsensitive("CaseSensitive") != null ? route.AttributeCaseInsensitive("CaseSensitive").Value : settings.RoutesAreCaseSensitive.ToString()),
+                                      AccentSensitive = Convert.ToBoolean(route.AttributeCaseInsensitive("AccentSensitive") != null ? route.AttributeCaseInsensitive("AccentSensitive").Value : settings.RoutesAreAccentSensitive.ToString()),
+                                      Description = route.AttributeCaseInsensitive("Description") != null ? route.AttributeCaseInsensitive("Description").Value : string.Empty
                                   }).ToList();
 
                         foreach (var route in routes)

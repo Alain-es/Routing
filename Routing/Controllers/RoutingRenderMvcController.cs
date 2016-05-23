@@ -1,7 +1,8 @@
-﻿using System.Web.Mvc;
+﻿using System;
+using System.Web;
+using System.Web.Mvc;
 using Umbraco.Web.Models;
 using Umbraco.Web.Mvc;
-
 
 namespace Routing.Controllers
 {
@@ -10,11 +11,24 @@ namespace Routing.Controllers
         public override ActionResult Index(RenderModel model)
         {
             // Retrieve the template from the cache
-            string cacheId = string.Format(Routing.Constants.Cache.TemplateCacheIdPattern, model.Content.Id);
-            string template = Routing.Helpers.CacheHelper.Get(cacheId) as string;
-            if (template != null)
+            HttpRequestBase request = null;
+            try
             {
-                return View(template, model);
+                if (HttpContext != null && HttpContext.Request != null)
+                {
+                    request = HttpContext.Request;
+                }
+            }
+            catch (Exception) { }
+            if (request != null)
+            {
+                string requestUrl = VirtualPathUtility.AppendTrailingSlash(request.Url.AbsolutePath);
+                string cacheId = string.Format(Routing.Constants.Cache.TemplateCacheIdPattern, requestUrl);
+                string template = Routing.Helpers.CacheHelper.Get(cacheId) as string;
+                if (template != null)
+                {
+                    return View(template, model);
+                }
             }
 
             // Default template

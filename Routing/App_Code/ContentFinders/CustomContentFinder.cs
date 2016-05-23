@@ -358,7 +358,8 @@ namespace Routing.ContentFinders
                         new[] { Routing.Constants.Config.ConfigFilePhysicalPath });
 
                     // Add the template to the cache in order to retrieve it from the Render MVC controller
-                    string cacheId = string.Format(Routing.Constants.Cache.TemplateCacheIdPattern, contentRequest.PublishedContent.Id);
+                    string requestUrl = VirtualPathUtility.AppendTrailingSlash(contentRequest.Uri.GetAbsolutePathDecoded());
+                    string cacheId = string.Format(Routing.Constants.Cache.TemplateCacheIdPattern, requestUrl);
                     Routing.Helpers.CacheHelper.GetExistingOrAddToCacheSlidingExpiration(cacheId, 600, System.Web.Caching.CacheItemPriority.NotRemovable,
                         () =>
                         {

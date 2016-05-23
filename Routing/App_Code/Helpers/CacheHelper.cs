@@ -73,7 +73,7 @@ namespace Routing.Helpers
                 return cachedObject;
             }
 
-            lock (string.Intern("b87a73ec-4947-4847-96fa-cedffb6f977a-" + key))
+            lock (string.Intern("233816dc-570c-4e4b-a605-ac1210782bc5-" + key))
             {
                 cachedObject = Get(key);
                 if (cachedObject != null)
