@@ -23,7 +23,7 @@ namespace Routing.Controllers
             if (request != null)
             {
                 string requestUrl = VirtualPathUtility.AppendTrailingSlash(request.Url.AbsolutePath);
-                string cacheId = string.Format(Routing.Constants.Cache.TemplateCacheIdPattern, requestUrl);
+                string cacheId = string.Format(Routing.Constants.Cache.TemplateCacheIdPattern, requestUrl.ToLower());
                 string template = Routing.Helpers.CacheHelper.Get(cacheId) as string;
                 if (template != null)
                 {

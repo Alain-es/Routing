@@ -87,211 +87,211 @@ namespace Routing.ContentFinders
             {
 #endif
 
-            // Split the request url into segements
-            var requestUrlSegments = contentRequest.Uri.GetAbsolutePathDecoded().Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                // Split the request url into segements
+                var requestUrlSegments = contentRequest.Uri.GetAbsolutePathDecoded().Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
 
-            foreach (var route in routes)
-            {
-
-                // Try to find the content node using the property/properties specified
-                if (!string.IsNullOrWhiteSpace(route.PropertyAlias) || !string.IsNullOrWhiteSpace(route.PropertyAliasExactMatch))
+                foreach (var route in routes)
                 {
 
-                    // Go through all urlSegments defined for the route that contains the {PropertyValue} identifier
-                    foreach (var routeSegmentSettings in route.RouteSegmentSettingsCollection.Where(x => x.PositionOfPropertyValueSegment > 0))
+                    // Try to find the content node using the property/properties specified
+                    if (!string.IsNullOrWhiteSpace(route.PropertyAlias) || !string.IsNullOrWhiteSpace(route.PropertyAliasExactMatch))
                     {
 
-                        // Check whether the request url contains a segment to compare with the property value
-                        var requestUrlPropertyValueSegment = (requestUrlSegments.Length >= routeSegmentSettings.PositionOfPropertyValueSegment) ? requestUrlSegments.Skip(routeSegmentSettings.PositionOfPropertyValueSegment - 1).FirstOrDefault() : string.Empty;
-                        if (!string.IsNullOrWhiteSpace(requestUrlPropertyValueSegment))
+                        // Go through all urlSegments defined for the route that contains the {PropertyValue} identifier
+                        foreach (var routeSegmentSettings in route.RouteSegmentSettingsCollection.Where(x => x.PositionOfPropertyValueSegment > 0))
                         {
 
-                            // Create a test route to compare with the request's route in order to see if the UrlSegments match
-                            var testRoute = VirtualPathUtility.AppendTrailingSlash(Regex.Replace(routeSegmentSettings.UrlSegments, @"\{PropertyValue\}", requestUrlPropertyValueSegment));
-                            if (UrlMatch(testRoute, requestUrl))
+                            // Check whether the request url contains a segment to compare with the property value
+                            var requestUrlPropertyValueSegment = (requestUrlSegments.Length >= routeSegmentSettings.PositionOfPropertyValueSegment) ? requestUrlSegments.Skip(routeSegmentSettings.PositionOfPropertyValueSegment - 1).FirstOrDefault() : string.Empty;
+                            if (!string.IsNullOrWhiteSpace(requestUrlPropertyValueSegment))
                             {
-                                // Use Examine to find the content node
-                                Examine.SearchCriteria.ISearchCriteria criteria;
-                                Examine.SearchCriteria.IBooleanOperation filter;
 
-                                // Try to find a content node that contains a property (PropertyAliasExactMatch) whith value matches the PropertyValue url's segment
-                                if (!string.IsNullOrWhiteSpace(route.PropertyAliasExactMatch))
+                                // Create a test route to compare with the request's route in order to see if the UrlSegments match
+                                var testRoute = VirtualPathUtility.AppendTrailingSlash(Regex.Replace(routeSegmentSettings.UrlSegments, @"\{PropertyValue\}", requestUrlPropertyValueSegment));
+                                if (UrlMatch(testRoute, requestUrl))
                                 {
-                                    IPublishedContent result = null;
+                                    // Use Examine to find the content node
+                                    Examine.SearchCriteria.ISearchCriteria criteria;
+                                    Examine.SearchCriteria.IBooleanOperation filter;
 
-                                    // Search
-                                    criteria = ExamineManager.Instance.SearchProviderCollection[settings.RoutesExamineSearchProvider].CreateSearchCriteria(UmbracoExamine.IndexTypes.Content);
-                                    string searchValue = string.Format(@"""{0}""", requestUrlPropertyValueSegment);
-                                    switch (route.PropertyAliasExactMatch.ToLower())
+                                    // Try to find a content node that contains a property (PropertyAliasExactMatch) whith value matches the PropertyValue url's segment
+                                    if (!string.IsNullOrWhiteSpace(route.PropertyAliasExactMatch))
                                     {
-                                        case "id":
-                                            filter = criteria.Field("id", searchValue);
-                                            break;
-                                        case "encryptedId":
-                                            filter = criteria.Field("id", Helpers.EncryptionHelper.DecryptAES(searchValue, settings.EncryptionKey));
-                                            break;
-                                        case "name":
-                                            filter = criteria.GroupedOr(new List<string>() { "nodeName", "urlName" }, searchValue);
-                                            break;
-                                        default:
-                                            filter = criteria.Field(route.PropertyAliasExactMatch, searchValue);
-                                            break;
-                                    }
-                                    if (!string.IsNullOrWhiteSpace(route.DocumentTypeAlias))
-                                    {
-                                        filter = filter.And().GroupedOr(new List<string>() { "nodeTypeAlias" }, route.DocumentTypeAlias.Split(','));
-                                    }
-                                    var results = _UmbracoHelper.TypedSearch(filter.Compile()).ToList();
+                                        IPublishedContent result = null;
 
-                                    if (results.Any())
-                                    {
-                                        // Check the full url 
-                                        if (route.MatchNodeFullUrl)
+                                        // Search
+                                        criteria = ExamineManager.Instance.SearchProviderCollection[settings.RoutesExamineSearchProvider].CreateSearchCriteria(UmbracoExamine.IndexTypes.Content);
+                                        string searchValue = string.Format(@"""{0}""", requestUrlPropertyValueSegment);
+                                        switch (route.PropertyAliasExactMatch.ToLower())
                                         {
-                                            result = results.FirstOrDefault(x => x.Url().Equals(requestUrl, route.CaseSensitive, route.AccentSensitive));
+                                            case "id":
+                                                filter = criteria.Field("id", searchValue);
+                                                break;
+                                            case "encryptedId":
+                                                filter = criteria.Field("id", Helpers.EncryptionHelper.DecryptAES(searchValue, settings.EncryptionKey));
+                                                break;
+                                            case "name":
+                                                filter = criteria.GroupedOr(new List<string>() { "nodeName", "urlName" }, searchValue);
+                                                break;
+                                            default:
+                                                filter = criteria.Field(route.PropertyAliasExactMatch, searchValue);
+                                                break;
                                         }
-                                        // Check only the PropertyValue segment of the url
-                                        else
+                                        if (!string.IsNullOrWhiteSpace(route.DocumentTypeAlias))
                                         {
-                                            switch (route.PropertyAliasExactMatch.ToLower())
+                                            filter = filter.And().GroupedOr(new List<string>() { "nodeTypeAlias" }, route.DocumentTypeAlias.Split(','));
+                                        }
+                                        var results = _UmbracoHelper.TypedSearch(filter.Compile()).ToList();
+
+                                        if (results.Any())
+                                        {
+                                            // Check the full url 
+                                            if (route.MatchNodeFullUrl)
                                             {
-                                                case "id":
-                                                case "encryptedId":
-                                                    result = results.FirstOrDefault(x => x.Id.ToString().TrimStart("/").TrimEnd("/").Equals(requestUrlPropertyValueSegment, route.CaseSensitive, route.AccentSensitive));
-                                                    break;
-                                                case "name":
-                                                    result = results.FirstOrDefault(x => x.Name.TrimStart("/").TrimEnd("/").Equals(requestUrlPropertyValueSegment, route.CaseSensitive, route.AccentSensitive));
-                                                    break;
-                                                default:
-                                                    result = results.FirstOrDefault(x => x.GetPropertyValue<string>(route.PropertyAliasExactMatch).TrimStart("/").TrimEnd("/").Equals(requestUrlPropertyValueSegment, route.CaseSensitive, route.AccentSensitive));
-                                                    break;
+                                                result = results.FirstOrDefault(x => x.Url().Equals(requestUrl, route.CaseSensitive, route.AccentSensitive));
+                                            }
+                                            // Check only the PropertyValue segment of the url
+                                            else
+                                            {
+                                                switch (route.PropertyAliasExactMatch.ToLower())
+                                                {
+                                                    case "id":
+                                                    case "encryptedId":
+                                                        result = results.FirstOrDefault(x => x.Id.ToString().TrimStart("/").TrimEnd("/").Equals(requestUrlPropertyValueSegment, route.CaseSensitive, route.AccentSensitive));
+                                                        break;
+                                                    case "name":
+                                                        result = results.FirstOrDefault(x => x.Name.TrimStart("/").TrimEnd("/").Equals(requestUrlPropertyValueSegment, route.CaseSensitive, route.AccentSensitive));
+                                                        break;
+                                                    default:
+                                                        result = results.FirstOrDefault(x => x.GetPropertyValue<string>(route.PropertyAliasExactMatch).TrimStart("/").TrimEnd("/").Equals(requestUrlPropertyValueSegment, route.CaseSensitive, route.AccentSensitive));
+                                                        break;
+                                                }
+                                            }
+
+                                            if (result != null)
+                                            {
+                                                contentRequest.PublishedContent = result;
+                                                SetTemplate(contentRequest, route.Template, route.ForceTemplate, settings.CacheDurationInHours * 3600);
+                                                AddToCacheUrlContentNode(cacheId, settings.CacheDurationInHours * 3600, requestUrl, result.Id, route.Template, route.ForceTemplate);
+                                                // Indicates that a content node was found 
+                                                return true;
                                             }
                                         }
 
-                                        if (result != null)
+                                    }
+
+                                    // Try to find a content node that contains a property (PropertyAlias) whith value converted to url matches the PropertyValue url's segment
+                                    if (!string.IsNullOrWhiteSpace(route.PropertyAlias))
+                                    {
+                                        IPublishedContent result = null;
+
+                                        // Search with wildcards
+                                        criteria = ExamineManager.Instance.SearchProviderCollection[settings.RoutesExamineSearchProvider].CreateSearchCriteria(UmbracoExamine.IndexTypes.Content);
+                                        string searchValue = Regex.Replace(requestUrlPropertyValueSegment, @"[^A-Za-z0-9]+", "*");
+                                        switch (route.PropertyAlias.ToLower())
                                         {
-                                            contentRequest.PublishedContent = result;
-                                            SetTemplate(contentRequest, route.Template, route.ForceTemplate, settings.CacheDurationInHours * 3600);
-                                            AddToCacheUrlContentNode(cacheId, settings.CacheDurationInHours * 3600, requestUrl, result.Id, route.Template, route.ForceTemplate);
-                                            // Indicates that a content node was found 
-                                            return true;
+                                            case "id":
+                                                filter = criteria.Field("id", searchValue.MultipleCharacterWildcard());
+                                                break;
+                                            case "encryptedId":
+                                                filter = criteria.Field("id", Helpers.EncryptionHelper.DecryptAES(searchValue, settings.EncryptionKey).MultipleCharacterWildcard());
+                                                break;
+                                            case "name":
+                                                filter = criteria.GroupedOr(new List<string>() { "nodeName", "urlName" }, searchValue.MultipleCharacterWildcard());
+                                                break;
+                                            default:
+                                                filter = criteria.Field(route.PropertyAlias, searchValue.MultipleCharacterWildcard());
+                                                break;
                                         }
-                                    }
-
-                                }
-
-                                // Try to find a content node that contains a property (PropertyAlias) whith value converted to url matches the PropertyValue url's segment
-                                if (!string.IsNullOrWhiteSpace(route.PropertyAlias))
-                                {
-                                    IPublishedContent result = null;
-
-                                    // Search with wildcards
-                                    criteria = ExamineManager.Instance.SearchProviderCollection[settings.RoutesExamineSearchProvider].CreateSearchCriteria(UmbracoExamine.IndexTypes.Content);
-                                    string searchValue = Regex.Replace(requestUrlPropertyValueSegment, @"[^A-Za-z0-9]+", "*");
-                                    switch (route.PropertyAlias.ToLower())
-                                    {
-                                        case "id":
-                                            filter = criteria.Field("id", searchValue.MultipleCharacterWildcard());
-                                            break;
-                                        case "encryptedId":
-                                            filter = criteria.Field("id", Helpers.EncryptionHelper.DecryptAES(searchValue, settings.EncryptionKey).MultipleCharacterWildcard());
-                                            break;
-                                        case "name":
-                                            filter = criteria.GroupedOr(new List<string>() { "nodeName", "urlName" }, searchValue.MultipleCharacterWildcard());
-                                            break;
-                                        default:
-                                            filter = criteria.Field(route.PropertyAlias, searchValue.MultipleCharacterWildcard());
-                                            break;
-                                    }
-                                    if (!string.IsNullOrWhiteSpace(route.DocumentTypeAlias))
-                                    {
-                                        filter = filter.And().GroupedOr(new List<string>() { "nodeTypeAlias" }, route.DocumentTypeAlias.Split(','));
-                                    }
-                                    var results = _UmbracoHelper.TypedSearch(filter.Compile()).ToList();
-
-                                    // Search without wildcards
-                                    criteria = ExamineManager.Instance.SearchProviderCollection[settings.RoutesExamineSearchProvider].CreateSearchCriteria(UmbracoExamine.IndexTypes.Content);
-                                    searchValue = Regex.Replace(requestUrlPropertyValueSegment, @"[^A-Za-z0-9]+", " ");
-                                    switch (route.PropertyAlias.ToLower())
-                                    {
-                                        case "id":
-                                            filter = criteria.Field("id", searchValue);
-                                            break;
-                                        case "encryptedId":
-                                            filter = criteria.Field("id", Helpers.EncryptionHelper.DecryptAES(searchValue, settings.EncryptionKey));
-                                            break;
-                                        case "name":
-                                            filter = criteria.GroupedOr(new List<string>() { "nodeName", "urlName" }, searchValue);
-                                            break;
-                                        default:
-                                            filter = criteria.Field(route.PropertyAlias, searchValue);
-                                            break;
-                                    }
-                                    if (!string.IsNullOrWhiteSpace(route.DocumentTypeAlias))
-                                    {
-                                        filter = filter.And().GroupedOr(new List<string>() { "nodeTypeAlias" }, route.DocumentTypeAlias.Split(','));
-                                    }
-                                    results.AddRange(_UmbracoHelper.TypedSearch(filter.Compile()).ToList());
-
-                                    if (results.Any())
-                                    {
-                                        // Check the full url
-                                        if (route.MatchNodeFullUrl)
+                                        if (!string.IsNullOrWhiteSpace(route.DocumentTypeAlias))
                                         {
-                                            result = results.DistinctBy(x => x.Id).FirstOrDefault(x => x.Url().Equals(requestUrl, route.CaseSensitive, route.AccentSensitive));
+                                            filter = filter.And().GroupedOr(new List<string>() { "nodeTypeAlias" }, route.DocumentTypeAlias.Split(','));
                                         }
+                                        var results = _UmbracoHelper.TypedSearch(filter.Compile()).ToList();
 
-                                        // Check only the PropertyValue segment of the url
-                                        else
+                                        // Search without wildcards
+                                        criteria = ExamineManager.Instance.SearchProviderCollection[settings.RoutesExamineSearchProvider].CreateSearchCriteria(UmbracoExamine.IndexTypes.Content);
+                                        searchValue = Regex.Replace(requestUrlPropertyValueSegment, @"[^A-Za-z0-9]+", " ");
+                                        switch (route.PropertyAlias.ToLower())
                                         {
-                                            switch (route.PropertyAlias.ToLower())
+                                            case "id":
+                                                filter = criteria.Field("id", searchValue);
+                                                break;
+                                            case "encryptedId":
+                                                filter = criteria.Field("id", Helpers.EncryptionHelper.DecryptAES(searchValue, settings.EncryptionKey));
+                                                break;
+                                            case "name":
+                                                filter = criteria.GroupedOr(new List<string>() { "nodeName", "urlName" }, searchValue);
+                                                break;
+                                            default:
+                                                filter = criteria.Field(route.PropertyAlias, searchValue);
+                                                break;
+                                        }
+                                        if (!string.IsNullOrWhiteSpace(route.DocumentTypeAlias))
+                                        {
+                                            filter = filter.And().GroupedOr(new List<string>() { "nodeTypeAlias" }, route.DocumentTypeAlias.Split(','));
+                                        }
+                                        results.AddRange(_UmbracoHelper.TypedSearch(filter.Compile()).ToList());
+
+                                        if (results.Any())
+                                        {
+                                            // Check the full url
+                                            if (route.MatchNodeFullUrl)
                                             {
-                                                case "id":
-                                                case "encryptedId":
-                                                    result = results.DistinctBy(x => x.Id).FirstOrDefault(x => x.Id.ToString().ToUrlSegment(contentRequest.Culture).Equals(requestUrlPropertyValueSegment, route.CaseSensitive, route.AccentSensitive));
-                                                    break;
-                                                case "name":
-                                                    result = results.DistinctBy(x => x.Id).FirstOrDefault(x => x.Name.ToUrlSegment(contentRequest.Culture).Equals(requestUrlPropertyValueSegment, route.CaseSensitive, route.AccentSensitive));
-                                                    break;
-                                                default:
-                                                    result = results.DistinctBy(x => x.Id).FirstOrDefault(x => x.GetPropertyValue<string>(route.PropertyAlias).ToUrlSegment(contentRequest.Culture).Equals(requestUrlPropertyValueSegment, route.CaseSensitive, route.AccentSensitive));
-                                                    break;
+                                                result = results.DistinctBy(x => x.Id).FirstOrDefault(x => x.Url().Equals(requestUrl, route.CaseSensitive, route.AccentSensitive));
                                             }
-                                        }
 
-                                        if (result != null)
-                                        {
-                                            contentRequest.PublishedContent = result;
-                                            SetTemplate(contentRequest, route.Template, route.ForceTemplate, settings.CacheDurationInHours * 3600);
-                                            AddToCacheUrlContentNode(cacheId, settings.CacheDurationInHours * 3600, requestUrl, result.Id, route.Template, route.ForceTemplate);
-                                            // Indicates that a content node was found 
-                                            return true;
+                                            // Check only the PropertyValue segment of the url
+                                            else
+                                            {
+                                                switch (route.PropertyAlias.ToLower())
+                                                {
+                                                    case "id":
+                                                    case "encryptedId":
+                                                        result = results.DistinctBy(x => x.Id).FirstOrDefault(x => x.Id.ToString().ToUrlSegment(contentRequest.Culture).Equals(requestUrlPropertyValueSegment, route.CaseSensitive, route.AccentSensitive));
+                                                        break;
+                                                    case "name":
+                                                        result = results.DistinctBy(x => x.Id).FirstOrDefault(x => x.Name.ToUrlSegment(contentRequest.Culture).Equals(requestUrlPropertyValueSegment, route.CaseSensitive, route.AccentSensitive));
+                                                        break;
+                                                    default:
+                                                        result = results.DistinctBy(x => x.Id).FirstOrDefault(x => x.GetPropertyValue<string>(route.PropertyAlias).ToUrlSegment(contentRequest.Culture).Equals(requestUrlPropertyValueSegment, route.CaseSensitive, route.AccentSensitive));
+                                                        break;
+                                                }
+                                            }
+
+                                            if (result != null)
+                                            {
+                                                contentRequest.PublishedContent = result;
+                                                SetTemplate(contentRequest, route.Template, route.ForceTemplate, settings.CacheDurationInHours * 3600);
+                                                AddToCacheUrlContentNode(cacheId, settings.CacheDurationInHours * 3600, requestUrl, result.Id, route.Template, route.ForceTemplate);
+                                                // Indicates that a content node was found 
+                                                return true;
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                }
 
-                // Fallback node, what means that no content node was found or that the PropertyAlias/PropertyAliasExactMatch settings are  empty for this route
-                if (!string.IsNullOrWhiteSpace(route.FallbackNodeId))
-                {
-                    // Check whether the request url matches with one of the urlSegments defined in the route
-                    foreach (var routeSegmentSetting in route.RouteSegmentSettingsCollection.Where(x => requestUrl.InvariantEquals(x.UrlSegments)))
+                    // Fallback node, what means that no content node was found or that the PropertyAlias/PropertyAliasExactMatch settings are  empty for this route
+                    if (!string.IsNullOrWhiteSpace(route.FallbackNodeId))
                     {
-                        int nodeId;
-                        if (int.TryParse(route.FallbackNodeId, out nodeId))
+                        // Check whether the request url matches with one of the urlSegments defined in the route
+                        foreach (var routeSegmentSetting in route.RouteSegmentSettingsCollection.Where(x => requestUrl.InvariantEquals(x.UrlSegments)))
                         {
-                            contentRequest.PublishedContent = UmbracoContext.Current.ContentCache.GetById(nodeId);
-                            SetTemplate(contentRequest, route.Template, route.ForceTemplate, settings.CacheDurationInHours * 3600);
-                            AddToCacheUrlContentNode(cacheId, settings.CacheDurationInHours * 3600, requestUrl, nodeId, route.Template, route.ForceTemplate);
-                            // Indicates that a content node was found 
-                            return true;
+                            int nodeId;
+                            if (int.TryParse(route.FallbackNodeId, out nodeId))
+                            {
+                                contentRequest.PublishedContent = UmbracoContext.Current.ContentCache.GetById(nodeId);
+                                SetTemplate(contentRequest, route.Template, route.ForceTemplate, settings.CacheDurationInHours * 3600);
+                                AddToCacheUrlContentNode(cacheId, settings.CacheDurationInHours * 3600, requestUrl, nodeId, route.Template, route.ForceTemplate);
+                                // Indicates that a content node was found 
+                                return true;
+                            }
                         }
                     }
                 }
-            }
 #if DEBUG
             }
             finally
@@ -359,7 +359,7 @@ namespace Routing.ContentFinders
 
                     // Add the template to the cache in order to retrieve it from the Render MVC controller
                     string requestUrl = VirtualPathUtility.AppendTrailingSlash(contentRequest.Uri.GetAbsolutePathDecoded());
-                    string cacheId = string.Format(Routing.Constants.Cache.TemplateCacheIdPattern, requestUrl);
+                    string cacheId = string.Format(Routing.Constants.Cache.TemplateCacheIdPattern, requestUrl.ToLower());
                     Routing.Helpers.CacheHelper.GetExistingOrAddToCacheSlidingExpiration(cacheId, 600, System.Web.Caching.CacheItemPriority.NotRemovable,
                         () =>
                         {
