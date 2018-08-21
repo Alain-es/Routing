@@ -1,4 +1,5 @@
-﻿using Routing.Models;
+﻿using Routing.Extensions;
+using Routing.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,14 +8,11 @@ using System.Web.Caching;
 using System.Xml.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Logging;
-using Routing.Extensions;
-
 
 namespace Routing.Controllers
 {
     public class ConfigController
     {
-
         public IEnumerable<Route> getRoutes()
         {
             // Get routes from the cache
@@ -104,7 +102,7 @@ namespace Routing.Controllers
                             xelement = XElement.Load(Routing.Constants.Config.ConfigFilePhysicalPath);
                         }
 
-                        //Settings: Check whether the 'RoutesAreCaseSensitive', 'RoutesAreAccentSensitive', 'CacheDurationInHours' and 'PersistentCacheUpdateFrequencyInMinutes' attributes contain valid boolean/integer values. 
+                        //Settings: Check whether the 'RoutesAreCaseSensitive', 'RoutesAreAccentSensitive', 'CacheDurationInHours' and 'PersistentCacheUpdateFrequencyInMinutes' attributes contain valid boolean/integer values.
                         bool requireSaving = false;
                         if (xelement.ElementCaseInsensitive("Settings") != null)
                         {
@@ -137,7 +135,7 @@ namespace Routing.Controllers
                             }
                         }
 
-                        //Routes: Check whether the 'Enabled', 'ForceTemplate', 'MatchNodeFullUrl', 'CaseSensitive' and 'AccentSensitive' attributes contain valid boolean values. 
+                        //Routes: Check whether the 'Enabled', 'ForceTemplate', 'MatchNodeFullUrl', 'CaseSensitive' and 'AccentSensitive' attributes contain valid boolean values.
                         foreach (XElement element in xelement.ElementCaseInsensitive("Routes").Descendants())
                         {
                             bool enabledAttribute;
@@ -177,7 +175,6 @@ namespace Routing.Controllers
                         {
                             xelement.Save(Routing.Constants.Config.ConfigFilePhysicalPath);
                         }
-
                     }
                     catch (Exception ex)
                     {
@@ -185,11 +182,9 @@ namespace Routing.Controllers
                     }
 
                     return xelement;
-
                 },
                 // Add a cache dependency on the config file in order to refresh the config when the config file changes
                 filenamesDependencies: new string[1] { Routing.Constants.Config.ConfigFilePhysicalPath });
-
 
             // Get the config settings and cache them
             Routing.Helpers.CacheHelper.GetExistingOrAddToCache(Routing.Constants.Cache.ConfigSettingsCacheId, 3600 * 24 * 365, System.Web.Caching.CacheItemPriority.NotRemovable,
@@ -247,7 +242,6 @@ namespace Routing.Controllers
                     }
 
                     return settings;
-
                 },
                 // Add a cache dependency on the config file in order to refresh the config when the config file changes
                 filenamesDependencies: new string[1] { Routing.Constants.Config.ConfigFilePhysicalPath });
@@ -261,7 +255,6 @@ namespace Routing.Controllers
                     IEnumerable<Route> routes = null;
                     try
                     {
-
                         // Get config
                         XElement xelement = Routing.Helpers.CacheHelper.Get(Routing.Constants.Cache.ConfigCacheId) as XElement;
 
@@ -303,7 +296,6 @@ namespace Routing.Controllers
                     }
 
                     return routes ?? new List<Route>();
-
                 },
                 // Add a cache dependency on the config file in order to refresh the config when the config file changes
                 filenamesDependencies: new string[1] { Routing.Constants.Config.ConfigFilePhysicalPath });
@@ -366,9 +358,5 @@ namespace Routing.Controllers
                 LogHelper.Warn<ConfigController>("Routing config file change detected.");
             }
         }
-
-
-
     }
-
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Web;
 using System.Web.Mvc;
+using Umbraco.Core;
 using Umbraco.Web.Models;
 using Umbraco.Web.Mvc;
 
@@ -22,7 +23,7 @@ namespace Routing.Controllers
             catch (Exception) { }
             if (request != null)
             {
-                string requestUrl = VirtualPathUtility.AppendTrailingSlash(request.Url.AbsolutePath);
+                string requestUrl = VirtualPathUtility.AppendTrailingSlash(request.Url.GetAbsolutePathDecoded());
                 string cacheId = string.Format(Routing.Constants.Cache.TemplateCacheIdPattern, requestUrl.ToLower());
                 string template = Routing.Helpers.CacheHelper.Get(cacheId) as string;
                 if (template != null)
