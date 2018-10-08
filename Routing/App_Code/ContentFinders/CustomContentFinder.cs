@@ -353,6 +353,12 @@ namespace Routing.ContentFinders
             {
                 if (!string.IsNullOrWhiteSpace(template))
                 {
+                    var isValidTemplate = System.IO.File.Exists(HttpContext.Current.Server.MapPath(template));
+                    if (!isValidTemplate)
+                    {
+                        return;
+                    }
+
                     // Check whether it as an alias or a path
                     if (!template.Contains("/"))
                     {
@@ -363,16 +369,12 @@ namespace Routing.ContentFinders
                         contentRequest.SetTemplate(new Template(template, template, Guid.NewGuid().ToString().Replace("-", string.Empty)));
                     }
 
-                    string requestUrl = VirtualPathUtility.AppendTrailingSlash(UmbracoContext.Current.HttpContext.Request.Url.GetAbsolutePathDecoded());
-                    string cacheId = string.Format(Constants.Cache.TemplateCacheIdPattern, requestUrl.ToLower());
-                    if (Helpers.CacheHelper.Get(cacheId) != null)
-                    {
-                        return;
-                    }
+                    var requestUrl = contentRequest.Uri.OriginalString;
 
                     // Add the template to the cache in order to retrieve it from the Render MVC controller
+                    var cacheId = string.Format(Constants.Cache.TemplateCacheIdPattern, requestUrl.ToLower().Trim());
                     string cacheDependencyId = GetNodeCacheDependency(contentRequest.PublishedContent.Id);
-                    Helpers.CacheHelper.GetExistingOrAddToCacheSlidingExpiration(cacheId, 600, CacheItemPriority.NotRemovable,
+                    Helpers.CacheHelper.GetExistingOrAddToCacheSlidingExpiration(cacheId, 300, CacheItemPriority.NotRemovable,
                         () =>
                         {
                             return template;

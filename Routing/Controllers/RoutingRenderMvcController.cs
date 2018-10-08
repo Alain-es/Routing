@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Web;
 using System.Web.Mvc;
-using Umbraco.Core;
 using Umbraco.Web.Models;
 using Umbraco.Web.Mvc;
 
@@ -23,12 +22,16 @@ namespace Routing.Controllers
             catch (Exception) { }
             if (request != null)
             {
-                string requestUrl = VirtualPathUtility.AppendTrailingSlash(request.Url.GetAbsolutePathDecoded());
-                string cacheId = string.Format(Routing.Constants.Cache.TemplateCacheIdPattern, requestUrl.ToLower());
-                string template = Routing.Helpers.CacheHelper.Get(cacheId) as string;
-                if (template != null)
+                var requestUrl = ((RouteDefinition)ControllerContext.RouteData.DataTokens["umbraco-route-def"]).PublishedContentRequest.Uri.OriginalString;
+                var cacheId = string.Format(Routing.Constants.Cache.TemplateCacheIdPattern, requestUrl.ToLower().Trim());
+                var template = Routing.Helpers.CacheHelper.Get(cacheId) as string;
+                if (!string.IsNullOrWhiteSpace(template))
+                {
+                    var isValidTemplate = System.IO.File.Exists(Server.MapPath(template));
+                    if (isValidTemplate)
                 {
                     return View(template, model);
+                    }
                 }
             }
 
