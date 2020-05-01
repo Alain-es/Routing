@@ -349,6 +349,11 @@ namespace Routing.ContentFinders
 
         private void SetTemplate(PublishedContentRequest contentRequest, string template, bool forceTemplate)
         {
+            if(contentRequest.PublishedContent == null)
+            {
+                return;
+            }
+
             if (contentRequest.TemplateAlias == null || string.IsNullOrWhiteSpace(contentRequest.TemplateAlias) || forceTemplate)
             {
                 if (!string.IsNullOrWhiteSpace(template))
